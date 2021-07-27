@@ -220,7 +220,8 @@ class Perceiver(nn.Module):
         weight_tie_layers=False,
         fourier_encode_data=True,
         self_per_cross_attn=1,
-        self_attn_rel_pos=True
+        self_attn_rel_pos=True,
+        sequential=False
     ):
         """The shape of the final attention mechanism will be:
         depth * (cross attention -> self_per_cross_attn * self attention)
@@ -250,12 +251,22 @@ class Perceiver(nn.Module):
               if you are fourier encoding the data yourself.
           self_per_cross_attn: Number of self attention blocks per cross attn.
           self_attn_rel_pos:
+          sequential: If True, use the Perceiver like a recurrent neural
+              network: Each cross attention gets a different timestep of
+              the input 'byte array' or 'context', and the output of forward()
+              has one timestep for the latent array for each timestep.
+              depth must be set to the sequence length.
         """
         super().__init__()
         self.input_axis = input_axis
         self.max_freq = max_freq
         self.num_freq_bands = num_freq_bands
         self.freq_base = freq_base
+
+        if sequential and not weight_tie_layers:
+            raise Warning(
+                '`sequential` is True but `weight_tie_layers` is False.'
+                'Are you sure you want different weights for each timestep?')
 
         self.fourier_encode_data = fourier_encode_data
         fourier_channels = (
@@ -330,16 +341,29 @@ class Perceiver(nn.Module):
                     ]
                 ))
 
-        self.to_logits = nn.Sequential(
-            nn.LayerNorm(latent_dim),
-            nn.Linear(latent_dim, num_classes))
+        if not sequential:
+            self.to_logits = nn.Sequential(
+                nn.LayerNorm(latent_dim),
+                nn.Linear(latent_dim, num_classes))
 
         self.sinu_emb = None
         if self_attn_rel_pos:
             self.sinu_emb = SinusoidalEmbeddings(latent_dim_head)
 
     def forward(self, data, mask=None):
-        b, *axis, _ = *data.shape
+        """
+        Args:
+          data: If sequential is True, then data must be of shape:
+              (batch size, sequence length, *axes) where axes would be width
+              and height for images.
+        """
+        if self.sequential:
+            b, seq_length, *axis, _ = *data.shape
+            assert (
+                seq_length == self.depth
+            ), 'The 2nd dim of `data` must be equal to the network `depth`.'
+        else:
+            b, *axis, _ = *data.shape
         device = data.device
         assert (
             len(axis) == self.input_axis
@@ -363,9 +387,15 @@ class Perceiver(nn.Module):
 
             data = torch.cat((data, enc_pos), dim=-1)
 
-        # Concat to channels of data and flatten axis.
-        # b = batch size; d = last dimension of data.
-        data = rearrange(data, "b ... d -> b (...) d", b=b)
+        # Concat to channels of data and flatten axes.
+        # b = batch size; d = last dimension of data
+        if self.sequential:
+            data = rearrange(
+                data,
+                "b, s ... d -> b, s (...) d",
+                b=b, s=seq_length)
+        else:
+            data = rearrange(data, "b ... d -> b (...) d", b=b)
 
         # x is the 'latent array' in the paper.
         # b = batch size; n = number of latents; d = latent dimensions.
@@ -375,13 +405,22 @@ class Perceiver(nn.Module):
         pos_emb = self.sinu_emb(x) if exists(self.sinu_emb) else None
 
         # Layers.
-        for cross_attn, cross_ff, self_attns in self.layers:
-            x = cross_attn(x, context=data, mask=mask) + x
+        output_per_timestep = []
+        for i, (cross_attn, cross_ff, self_attns) in enumerate(self.layers):
+            if self.sequential:
+                data_for_step = data[:, i]
+            else:
+                data_for_step = data
+            x = cross_attn(x, context=data_for_step, mask=mask) + x
             x = cross_ff(x) + x
 
             for self_attn, self_ff in self_attns:
                 x = self_attn(x, pos_emb=pos_emb) + x
                 x = self_ff(x) + x
+            output_per_timestep.append(x)
 
-        x = x.mean(dim=-2)
-        return self.to_logits(x)
+        if self.sequential:
+            return torch.stack(output_per_timestep, dim=1)
+        else:
+            x = x.mean(dim=-2)
+            return self.to_logits(x)
