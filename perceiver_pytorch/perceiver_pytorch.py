@@ -1,5 +1,6 @@
 from math import pi, log
 from functools import wraps
+from typing import Optional
 
 import torch
 from torch import nn, einsum
@@ -37,14 +38,22 @@ def cache_fn(f):
 
 
 def fourier_encode(x, max_freq, num_bands=4, base=2):
+    """Concatenate Fourier position features onto x.
+
+    Args:
+      x: Input data.
+      max_freq: Maximum frequency.
+      num_bands: Number of frequency bands to concatenate.
+      base: Base of the logarithm function.
+    """
     x = x.unsqueeze(-1)
     device, dtype, orig_x = x.device, x.dtype, x
 
     scales = torch.logspace(
-        0.0,
-        log(max_freq / 2) / log(base),
-        num_bands,
-        base=base,
+        start=0.0,
+        end=log(max_freq / 2) / log(base),
+        steps=num_bands,  # Size of the 'scales' tensor.
+        base=base,  # Base of the log function.
         device=device,
         dtype=dtype,
     )
@@ -80,13 +89,25 @@ class PreNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
+    """Gaussian Error Gated Linear Unit.
+
+    See Shazer 2020: https://arxiv.org/abs/2002.05202
+    """
     def forward(self, x):
         x, gates = x.chunk(2, dim=-1)
         return x * F.gelu(gates)
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, mult=4, dropout=0.0):
+    """Feed forward neural net with GEGLU activation."""
+
+    def __init__(self, dim: int, mult: int = 4, dropout: float = 0.0):
+        """
+        Args:
+          dim: Input & Output size.
+          mult: The inner dimension of the FF net will be dim * mult.
+          dropout: Proportion to dropout after the GEGLU.
+        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, dim * mult * 2),
@@ -101,8 +122,21 @@ class FeedForward(nn.Module):
 
 class Attention(nn.Module):
     def __init__(
-        self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0
-    ):
+            self,
+            query_dim: int,
+            context_dim: Optional[int] = None,
+            heads: int = 8,
+            dim_head: int = 64,
+            dropout: float = 0.0):
+        """
+        Args:
+          query_dim: Size of the queries.
+          context_dim: Size of the 'context' (the 'byte array' in the paper).
+            If None, will default to the query_dim.
+          heads: Number of attention heads.
+          dim_head: Number of dimensions per head.
+          dropout: Proportion to dropout (in the final linear layer).
+        """
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
@@ -110,22 +144,36 @@ class Attention(nn.Module):
         self.scale = dim_head ** -0.5
         self.heads = heads
 
+        # Network to generate queries ('q').
         self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
+
+        # Network to generate keys and values ('k' and 'v').
+        # Uses inner_dim * 2 out_features because the output is
+        # split in two in forward() function.
         self.to_kv = nn.Linear(context_dim, inner_dim * 2, bias=False)
 
         self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, query_dim), nn.Dropout(dropout)
-        )
+            nn.Linear(inner_dim, query_dim),
+            nn.Dropout(dropout))
 
     def forward(self, x, context=None, mask=None, pos_emb=None):
+        """
+        Args:
+          x: The 'latent array' in the Perceiver paper.
+          context: The 'byte array' in the Perceiver paper (the input data).
+        """
         h = self.heads
 
-        q = self.to_q(x)
+        q = self.to_q(x)  # Generate query.
         context = default(context, x)
         k, v = self.to_kv(context).chunk(2, dim=-1)
 
+        # Rearrange the query, key and value tensors.
+        # b = batch size; n =
+        # h = number of heads; d = number of dims per head.
         q, k, v = map(
-            lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
+            lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h),
+            (q, k, v)
         )
 
         if exists(pos_emb):
@@ -182,7 +230,8 @@ class Perceiver(nn.Module):
           depth: Depth of net.
           max_freq: Maximum frequency, hyperparameter depending on how
               fine the data is.
-          freq_base:
+          freq_base: Base of the logarithm function for Fourier position
+              encoding.
           input_channels: Number of channels for each token of the input.
           input_axis: Number of axes for input data (2 for images, 3 for video)
           num_latents: Number of latents, or induced set points, or centroids.
@@ -216,6 +265,7 @@ class Perceiver(nn.Module):
         )
         input_dim = fourier_channels + input_channels
 
+        # Randomly initialise the 'latent array'.
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
 
         def get_cross_attn():
@@ -314,9 +364,11 @@ class Perceiver(nn.Module):
             data = torch.cat((data, enc_pos), dim=-1)
 
         # Concat to channels of data and flatten axis.
-        data = rearrange(data, "b ... d -> b (...) d")
+        # b = batch size; d = last dimension of data.
+        data = rearrange(data, "b ... d -> b (...) d", b=b)
 
         # x is the 'latent array' in the paper.
+        # b = batch size; n = number of latents; d = latent dimensions.
         x = repeat(self.latents, "n d -> b n d", b=b)
 
         # Rotary embeddings for latents, if specified.
