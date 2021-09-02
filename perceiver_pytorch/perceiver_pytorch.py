@@ -7,6 +7,8 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 
+from perceiver_pytorch.rotary import SinusoidalEmbeddings, apply_rotary_emb
+
 # helpers
 
 
@@ -286,7 +288,7 @@ class Perceiver(nn.Module):
             self.sinu_emb = SinusoidalEmbeddings(latent_dim_head)
 
     def forward(self, data, mask=None):
-        b, *axis, _ = *data.shape
+        b, *axis, _ = data.shape
         device = data.device
         assert (
             len(axis) == self.input_axis
