@@ -43,7 +43,7 @@ class MultiPerceiver(torch.nn.Module):
         input_dim = max(modality.input_dim for modality in modalities) + modality_encoding_dim
         # Pop dim
         self.max_modality_dim = input_dim
-        kwargs.pop("dim")
+        kwargs.pop("dim", None)
         # Want toe logit_dim to be the same as the channels * width or height
         kwargs["logits_dim"] = output_shape * self.output_channels
         self.perceiver = PerceiverIO(dim=input_dim, **kwargs)
