@@ -51,12 +51,14 @@ class Conv2DUpsample(torch.nn.Module):
             out_channels=output_channels * 2,
             kernel_size=(4, 4),
             stride=(2, 2),
+            padding=(1,1)
         )
         self.transpose_conv2 = torch.nn.ConvTranspose2d(
             in_channels=output_channels * 2,
             out_channels=output_channels,
             kernel_size=(4, 4),
             stride=(2, 2),
+            padding=(1,1)
         )
 
     def forward(self, x):

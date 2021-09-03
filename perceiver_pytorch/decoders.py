@@ -67,6 +67,7 @@ class ImageDecoder(torch.nn.Module):
                     num_space_upsamples=int_log2(spatial_upsample),
                 )
             else:
+                assert self.spatial_upsample == 4, "Conv2DUpsample only support 4x spatial upsample right now"
                 self.convnet = Conv2DUpsample(
                     input_channels=input_channels, output_channels=output_channels
                 )
