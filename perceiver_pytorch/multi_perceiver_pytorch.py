@@ -28,7 +28,7 @@ class MultiPerceiver(torch.nn.Module):
             output_channels: Number of output channels per image (int)
             sine_only: Only use Sine part of Fourier features (bool)
             output_shape: Int or Tuple of ints, giving the desired output shape of the model
-            **kwargs:
+            **kwargs: Extra kwargs to pass through to PerceiverIO
         """
         super(MultiPerceiver, self).__init__()
         self.fourier_encode_data = fourier_encode_data
