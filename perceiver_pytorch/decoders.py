@@ -42,7 +42,7 @@ class ImageDecoder(torch.nn.Module):
             if self.temporal_upsample != 1 or self.spatial_upsample != 1:
                 raise ValueError("Pixels postprocessing should not currently upsample.")
         elif self.postprocess_type == "conv1x1":
-            assert self._temporal_upsample == 1, "conv1x1 does not upsample in time."
+            assert self.temporal_upsample == 1, "conv1x1 does not upsample in time."
             if output_channels == -1:
                 raise ValueError("Expected value for n_outputs")
             self.conv1x1 = torch.nn.Conv2d(
@@ -89,7 +89,15 @@ class ImageDecoder(torch.nn.Module):
             else:
                 inputs = self.convnet(inputs)
         elif self.postprocess_type == "conv1x1":
-            inputs = self.conv1x1(inputs)
+            # Convnet image featurization.
+            if len(inputs.shape) == 5 and self.temporal_upsample == 1:
+                # Timeseries, do it to each timestep independently
+                outs = []
+                for i in range(inputs.shape[1]):
+                    outs.append(self.conv1x1(inputs[:, i, :, :, :]))
+                inputs = torch.stack(outs, dim=1)
+            else:
+                inputs = self.conv1x1(inputs)
         elif self.postprocess_type == "patches":
             inputs = reverse_space_to_depth(
                 inputs, self.temporal_upsample, self.spatial_upsample
