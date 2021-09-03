@@ -57,3 +57,12 @@ def test_pixels_video_encoder():
         out = encoder(image)
     assert not torch.isnan(out).any(), "Output included NaNs"
     assert out.size() == (2, 6, 12, 64, 64)
+
+
+def test_pixels_video_downsample_encoder():
+    encoder = ImageEncoder(prep_type="pixels", output_channels=48, temporal_downsample=2)
+    image = torch.randn(2, 6, 12, 256, 256)
+    with torch.no_grad():
+        out = encoder(image)
+    assert not torch.isnan(out).any(), "Output included NaNs"
+    assert out.size() == (2, 3, 12, 64, 64)
