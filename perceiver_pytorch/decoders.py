@@ -26,7 +26,8 @@ class ImageDecoder(torch.nn.Module):
         """
         super().__init__()
 
-        if postprocess_type not in ("conv", "patches", "pixels", "raft", "conv1x1"):
+        if postprocess_type not in ("conv", "patches", "pixels", "conv1x1"):
+            # TODO Add Raft
             raise ValueError("Invalid postproc_type!")
 
         # Architecture parameters:
