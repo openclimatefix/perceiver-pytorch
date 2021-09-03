@@ -5,7 +5,7 @@ import math
 import einops
 
 
-def extract_image_patches(x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1):
+def extract_image_patches(x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1) -> torch.Tensor:
     """
     Extract image patches in a way similar to TensorFlow extract_image_patches
     Taken from https://discuss.pytorch.org/t/tf-extract-image-patches-in-pytorch/43837/8

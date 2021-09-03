@@ -14,6 +14,16 @@ class ImageDecoder(torch.nn.Module):
             input_channels: int = 12,
             input_reshape_size=None,
     ):
+        """
+        ImageDecoder modeled after JAX version here
+        https://github.com/deepmind/deepmind-research/blob/769bfdbeafbcb472cb8e2c6cfa746b53ac82efc2/perceiver/io_processors.py#L441-L510
+        :param postprocess_type: Type of postprocessing, one of conv, patches, pixels, raft, or conv1x1
+        :param spatial_upsample: How much to spatial upsample
+        :param temporal_upsample: How much to temporally upsample
+        :param output_channels: Number of output channels, should be the final desired number of channels
+        :param input_channels: Number of input channels to decoder
+        :param input_reshape_size: The size to reshape the input to
+        """
         super().__init__()
 
         if postprocess_type not in ("conv", "patches", "pixels", "raft", "conv1x1"):
