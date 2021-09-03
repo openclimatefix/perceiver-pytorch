@@ -5,7 +5,9 @@ import math
 import einops
 
 
-def extract_image_patches(x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1) -> torch.Tensor:
+def extract_image_patches(
+    x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1
+) -> torch.Tensor:
     """
     Extract image patches in a way similar to TensorFlow extract_image_patches
     Taken from https://discuss.pytorch.org/t/tf-extract-image-patches-in-pytorch/43837/8
@@ -21,7 +23,9 @@ def extract_image_patches(x: torch.Tensor, kernel: int, stride: int = 1, dilatio
     w2 = math.ceil(w / stride)
     pad_row = (h2 - 1) * stride + (kernel - 1) * dilation + 1 - h
     pad_col = (w2 - 1) * stride + (kernel - 1) * dilation + 1 - w
-    x = F.pad(x, (pad_row // 2, pad_row - pad_row // 2, pad_col // 2, pad_col - pad_col // 2))
+    x = F.pad(
+        x, (pad_row // 2, pad_row - pad_row // 2, pad_col // 2, pad_col - pad_col // 2)
+    )
 
     # Extract patches
     # get all image windows of size (kernel, stride) and stride (kernel, stride)
@@ -33,7 +37,7 @@ def extract_image_patches(x: torch.Tensor, kernel: int, stride: int = 1, dilatio
 
 
 def reverse_space_to_depth(
-        frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
+    frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
 ) -> np.ndarray:
     """Reverse space to depth transform.
     Works for images (dim = 4) and videos (dim = 5)"""
@@ -60,7 +64,7 @@ def reverse_space_to_depth(
 
 
 def space_to_depth(
-        frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
+    frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
 ) -> np.ndarray:
     """Space to depth transform.
     Works for images (dim = 4) and videos (dim = 5)"""

@@ -4,11 +4,11 @@ from torch.nn import functional as F
 
 class Conv2DDownsample(torch.nn.Sequential):
     def __init__(
-            self,
-            num_layers: int = 1,
-            input_channels: int = 12,
-            output_channels: int = 64,
-            use_batchnorm: bool = True,
+        self,
+        num_layers: int = 1,
+        input_channels: int = 12,
+        output_channels: int = 64,
+        use_batchnorm: bool = True,
     ):
         """
         Constructs a Conv2DDownsample model
@@ -21,7 +21,9 @@ class Conv2DDownsample(torch.nn.Sequential):
 
         layers = [self.make_layer(input_channels, output_channels, batch=use_batchnorm)]
         for _ in range(num_layers - 1):
-            layers += [self.make_layer(output_channels, output_channels, batch=use_batchnorm)]
+            layers += [
+                self.make_layer(output_channels, output_channels, batch=use_batchnorm)
+            ]
 
         super().__init__(*layers)
 
@@ -66,11 +68,11 @@ class Conv2DUpsample(torch.nn.Module):
 
 class Conv3DUpsample(torch.nn.Module):
     def __init__(
-            self,
-            input_channels: int = 12,
-            output_channels: int = 12,
-            num_temporal_upsamples: int = 2,
-            num_space_upsamples: int = 4,
+        self,
+        input_channels: int = 12,
+        output_channels: int = 12,
+        num_temporal_upsamples: int = 2,
+        num_space_upsamples: int = 4,
     ):
         """
         Simple convolutional auto-encoder

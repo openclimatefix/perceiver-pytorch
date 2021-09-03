@@ -7,7 +7,7 @@ from perceiver_pytorch.modalities import InputModality
 def test_multiperceiver_creation():
     # Timeseries input
     input_size = 64
-    max_frequency = 16.
+    max_frequency = 16.0
     video_modality = InputModality(
         name="timeseries",
         input_channels=12,
@@ -33,15 +33,19 @@ def test_multiperceiver_creation():
         input_channels=1,  # number of channels for mono audio
         input_axis=1,  # number of axes, 2 for images
         num_freq_bands=24,  # number of freq bands, with original value (2 * K + 1)
-        max_freq=16.,  # maximum frequency, hyperparameter depending on how fine the data is
+        max_freq=16.0,  # maximum frequency, hyperparameter depending on how fine the data is
         sin_only=False,
         fourier_encode=True,
     )
-    model = MultiPerceiver(modalities=[video_modality, image_modality, timestep_modality], queries_dim=input_size, depth=6, forecast_steps=12, output_shape=input_size)
+    model = MultiPerceiver(
+        modalities=[video_modality, image_modality, timestep_modality],
+        queries_dim=input_size,
+        depth=6,
+        forecast_steps=12,
+        output_shape=input_size,
+    )
     x = {
-        "timeseries": torch.randn(
-            (2, 6, input_size, input_size, 12)
-        ),
+        "timeseries": torch.randn((2, 6, input_size, input_size, 12)),
         "base": torch.randn((2, input_size, input_size, 4)),
         "forecast_time": torch.randn(2, 24, 1),
     }

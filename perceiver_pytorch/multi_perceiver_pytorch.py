@@ -8,15 +8,15 @@ from einops import rearrange, repeat
 
 class MultiPerceiver(torch.nn.Module):
     def __init__(
-            self,
-            modalities: Iterable[InputModality],
-            fourier_encode_data: bool = True,
-            input_channels: int = 3,
-            output_channels: int = 12,
-            forecast_steps: int = 48,
-            sine_only: bool = False,
-            output_shape: int = 32,
-            **kwargs,
+        self,
+        modalities: Iterable[InputModality],
+        fourier_encode_data: bool = True,
+        input_channels: int = 3,
+        output_channels: int = 12,
+        forecast_steps: int = 48,
+        sine_only: bool = False,
+        output_shape: int = 32,
+        **kwargs,
     ):
         """
         PerceiverIO made to work more specifically with timeseries images and multimodal inputs https://arxiv.org/abs/2107.14795
@@ -40,7 +40,9 @@ class MultiPerceiver(torch.nn.Module):
         # we encode modality with one hot encoding, so need one dim per modality:
         modality_encoding_dim = sum([1 for _ in modalities])
         # input_dim is the maximum dimension over all input modalities:
-        input_dim = max(modality.input_dim for modality in modalities) + modality_encoding_dim
+        input_dim = (
+            max(modality.input_dim for modality in modalities) + modality_encoding_dim
+        )
         # Pop dim
         self.max_modality_dim = input_dim
         kwargs.pop("dim", None)
@@ -51,14 +53,18 @@ class MultiPerceiver(torch.nn.Module):
     def decode_output(self, data):
         pass
 
-    def forward(self, multi_modality_data: Dict[str, torch.Tensor], mask=None, queries=None):
+    def forward(
+        self, multi_modality_data: Dict[str, torch.Tensor], mask=None, queries=None
+    ):
         batch_sizes = set()
         num_modalities = len(multi_modality_data)
         linearized_data = []
 
-        for modality_index, modality_name in enumerate(sorted(multi_modality_data.keys())):
+        for modality_index, modality_name in enumerate(
+            sorted(multi_modality_data.keys())
+        ):
             assert (
-                    modality_name in self.modalities
+                modality_name in self.modalities
             ), f"modality {modality_name} was not defined in constructor"
             data = multi_modality_data[modality_name]
             modality = self.modalities[modality_name]
@@ -68,13 +74,20 @@ class MultiPerceiver(torch.nn.Module):
                 f"Expected {modality.input_axis} while forward argument offered {len(axis)}"
             )
             batch_sizes.add(b)
-            assert len(batch_sizes) == 1, "batch size must be the same across all modalities"
+            assert (
+                len(batch_sizes) == 1
+            ), "batch size must be the same across all modalities"
             enc_pos = []
             if self.fourier_encode_data:
                 # calculate fourier encoded positions in the range of [-1, 1], for all axis
 
                 axis_pos = list(
-                    map(lambda size: torch.linspace(-1.0, 1.0, steps=size).type_as(data), axis)
+                    map(
+                        lambda size: torch.linspace(-1.0, 1.0, steps=size).type_as(
+                            data
+                        ),
+                        axis,
+                    )
                 )
                 pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
                 enc_pos = fourier_encode(
@@ -90,7 +103,9 @@ class MultiPerceiver(torch.nn.Module):
             # Figure out padding for this modality, given max dimension across all modalities:
             padding_size = self.max_modality_dim - modality.input_dim - num_modalities
 
-            padding = torch.zeros(size=data.size()[0:-1] + (padding_size,)).type_as(data)
+            padding = torch.zeros(size=data.size()[0:-1] + (padding_size,)).type_as(
+                data
+            )
             # concat to channels of data and flatten axis
             modality_encodings = modality_encoding(
                 b, axis, modality_index, num_modalities

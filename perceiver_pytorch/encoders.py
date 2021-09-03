@@ -8,14 +8,14 @@ from perceiver_pytorch.utils import space_to_depth
 
 class ImageEncoder(torch.nn.Module):
     def __init__(
-            self,
-            input_channels: int = 12,
-            prep_type: str = "conv",
-            spatial_downsample: int = 4,
-            temporal_downsample: int = 1,
-            output_channels: int = 64,
-            conv_after_patching: bool = False,
-            conv2d_use_batchnorm: bool = True,
+        self,
+        input_channels: int = 12,
+        prep_type: str = "conv",
+        spatial_downsample: int = 4,
+        temporal_downsample: int = 1,
+        output_channels: int = 64,
+        conv_after_patching: bool = False,
+        conv2d_use_batchnorm: bool = True,
     ):
         """
         Image encoder class, modeled off the JAX version
@@ -41,7 +41,9 @@ class ImageEncoder(torch.nn.Module):
         if self.prep_type == "conv":
             # Downsampling with conv is currently restricted
             convnet_num_layers = math.log(spatial_downsample, 4)
-            convnet_num_layers_is_int = convnet_num_layers == np.round(convnet_num_layers)
+            convnet_num_layers_is_int = convnet_num_layers == np.round(
+                convnet_num_layers
+            )
             if not convnet_num_layers_is_int or temporal_downsample != 1:
                 raise ValueError(
                     "Only powers of 4 expected for spatial "
@@ -107,7 +109,7 @@ class ImageEncoder(torch.nn.Module):
                     :: self.temporal_downsample,
                     :: self.spatial_downsample,
                     :: self.spatial_downsample,
-                    ]
+                ]
             else:
                 raise ValueError("Unsupported data format for pixels")
 

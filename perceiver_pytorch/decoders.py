@@ -6,13 +6,13 @@ from perceiver_pytorch.convolutions import Conv2DUpsample, Conv3DUpsample
 
 class ImageDecoder(torch.nn.Module):
     def __init__(
-            self,
-            postprocess_type: str = "pixels",
-            spatial_upsample: int = 1,
-            temporal_upsample: int = 1,
-            output_channels: int = -1,
-            input_channels: int = 12,
-            input_reshape_size=None,
+        self,
+        postprocess_type: str = "pixels",
+        spatial_upsample: int = 1,
+        temporal_upsample: int = 1,
+        output_channels: int = -1,
+        input_channels: int = 12,
+        input_reshape_size=None,
     ):
         """
         ImageDecoder modeled after JAX version here
@@ -73,7 +73,8 @@ class ImageDecoder(torch.nn.Module):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         if self.input_reshape_size is not None:
             inputs = torch.reshape(
-                inputs, [inputs.shape[0]] + list(self.input_reshape_size) + [inputs.shape[-1]]
+                inputs,
+                [inputs.shape[0]] + list(self.input_reshape_size) + [inputs.shape[-1]],
             )
 
         if self.postprocess_type == "conv" or self.postprocess_type == "raft":
@@ -89,6 +90,8 @@ class ImageDecoder(torch.nn.Module):
         elif self.postprocess_type == "conv1x1":
             inputs = self.conv1x1(inputs)
         elif self.postprocess_type == "patches":
-            inputs = reverse_space_to_depth(inputs, self.temporal_upsample, self.spatial_upsample)
+            inputs = reverse_space_to_depth(
+                inputs, self.temporal_upsample, self.spatial_upsample
+            )
 
         return inputs
