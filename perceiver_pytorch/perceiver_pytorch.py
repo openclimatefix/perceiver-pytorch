@@ -36,22 +36,17 @@ def cache_fn(f):
     return cached_fn
 
 
-def fourier_encode(x, max_freq, num_bands=4, base=2):
+def fourier_encode(x, max_freq, num_bands=4, base=2, sine_only=False):
     x = x.unsqueeze(-1)
     device, dtype, orig_x = x.device, x.dtype, x
 
     scales = torch.logspace(
-        0.0,
-        log(max_freq / 2) / log(base),
-        num_bands,
-        base=base,
-        device=device,
-        dtype=dtype,
+        0.0, log(max_freq / 2) / log(base), num_bands, base=base, device=device, dtype=dtype
     )
     scales = scales[(*((None,) * (len(x.shape) - 1)), Ellipsis)]
 
     x = x * scales * pi
-    x = torch.cat([x.sin(), x.cos()], dim=-1)
+    x = x.sin() if sine_only else torch.cat([x.sin(), x.cos()], dim=-1)
     x = torch.cat((x, orig_x), dim=-1)
     return x
 

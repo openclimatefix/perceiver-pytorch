@@ -14,7 +14,7 @@ class MultiPerceiver(torch.nn.Module):
             input_channels: int = 3,
             output_channels: int = 12,
             forecast_steps: int = 48,
-            sin_only: bool = False,
+            sine_only: bool = False,
             output_shape: int = 32,
             **kwargs,
     ):
@@ -23,15 +23,19 @@ class MultiPerceiver(torch.nn.Module):
         Not a recurrent model, so like MetNet somewhat, can optionally give a one-hot encoded vector for the future
         timestep
         Args:
-            input_channels: Number of input channels
-            forecast_steps: Number of forecast steps to make
+            input_channels: Number of input channels (int)
+            forecast_steps: Number of forecast steps to make (int)
+            fourier_encode_data: Whether to add Fourier Features to the input data, if this is false, inputs should be have some type of positional encoding added beforehand
+            output_channels: Number of output channels per image (int)
+            sine_only: Only use Sine part of Fourier features (bool)
+            output_shape: Int or Tuple of ints, giving the desired output shape of the model
             **kwargs:
         """
         super(MultiPerceiver, self).__init__()
         self.fourier_encode_data = fourier_encode_data
         self.forecast_steps = forecast_steps
         self.input_channels = input_channels
-        self.sin_only = sin_only
+        self.sine_only = sine_only
         self.output_channels = output_channels
         self.modalities = {modality.name: modality for modality in modalities}
         # we encode modality with one hot encoding, so need one dim per modality:
@@ -79,7 +83,7 @@ class MultiPerceiver(torch.nn.Module):
                     modality.max_freq,
                     modality.num_freq_bands,
                     modality.freq_base,
-                    sin_only=self.sin_only,
+                    sine_only=self.sine_only,
                 )
                 enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
                 enc_pos = repeat(enc_pos, "... -> b ...", b=b)
