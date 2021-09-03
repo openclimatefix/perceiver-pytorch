@@ -44,14 +44,14 @@ def reverse_space_to_depth(
     if len(frames.shape) == 4:
         return einops.rearrange(
             frames,
-            "b h w (dh dw c) -> b (h dh) (w dw) c",
+            "b (dh dw c) h w -> b c (h dh) (w dw)",
             dh=spatial_block_size,
             dw=spatial_block_size,
         )
     elif len(frames.shape) == 5:
         return einops.rearrange(
             frames,
-            "b t h w (dt dh dw c) -> b (t dt) (h dh) (w dw) c",
+            "b t (dt dh dw c) h w -> b (t dt) c (h dh) (w dw)",
             dt=temporal_block_size,
             dh=spatial_block_size,
             dw=spatial_block_size,
@@ -71,14 +71,14 @@ def space_to_depth(
     if len(frames.shape) == 4:
         return einops.rearrange(
             frames,
-            "b (h dh) (w dw) c -> b h w (dh dw c)",
+            "b c (h dh) (w dw) -> b (dh dw c) h w",
             dh=spatial_block_size,
             dw=spatial_block_size,
         )
     elif len(frames.shape) == 5:
         return einops.rearrange(
             frames,
-            "b (t dt) (h dh) (w dw) c -> b t h w (dt dh dw c)",
+            "b (t dt) c (h dh) (w dw) -> b t (dt dh dw c) h w ",
             dt=temporal_block_size,
             dh=spatial_block_size,
             dw=spatial_block_size,

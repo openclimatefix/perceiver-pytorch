@@ -102,11 +102,12 @@ class ImageEncoder(torch.nn.Module):
         elif self.prep_type == "pixels":
             # If requested, will downsample in simplest way
             if x.ndim == 4:
-                x = x[:, :: self.spatial_downsample, :: self.spatial_downsample]
+                x = x[:, :, :: self.spatial_downsample, :: self.spatial_downsample]
             elif x.ndim == 5:
                 x = x[
                     :,
                     :: self.temporal_downsample,
+                    :,
                     :: self.spatial_downsample,
                     :: self.spatial_downsample,
                 ]

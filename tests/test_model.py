@@ -1,5 +1,4 @@
 import torch
-from perceiver_pytorch.perceiver_io import PerceiverIO
 from perceiver_pytorch.multi_perceiver_pytorch import MultiPerceiver
 from perceiver_pytorch.modalities import InputModality
 
