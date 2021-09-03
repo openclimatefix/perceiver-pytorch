@@ -19,9 +19,8 @@ class MultiPerceiver(torch.nn.Module):
             **kwargs,
     ):
         """
-        PerceiverIO made to work more specifically with timeseries images
-        Not a recurrent model, so like MetNet somewhat, can optionally give a one-hot encoded vector for the future
-        timestep
+        PerceiverIO made to work more specifically with timeseries images and multimodal inputs https://arxiv.org/abs/2107.14795
+
         Args:
             input_channels: Number of input channels (int)
             forecast_steps: Number of forecast steps to make (int)
