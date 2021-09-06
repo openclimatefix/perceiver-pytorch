@@ -6,6 +6,7 @@ from typing import List, Iterable, Dict, Optional, Any, Union
 from einops import rearrange, repeat
 from math import prod
 
+
 class MultiPerceiver(torch.nn.Module):
     def __init__(
         self,

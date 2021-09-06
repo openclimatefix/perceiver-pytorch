@@ -5,7 +5,12 @@ import pytest
 
 
 def test_conv_image_decoder():
-    decoder = ImageDecoder(postprocess_type="conv", output_channels=12, input_channels=48, spatial_upsample=4)
+    decoder = ImageDecoder(
+        postprocess_type="conv",
+        output_channels=12,
+        input_channels=48,
+        spatial_upsample=4,
+    )
     inputs = torch.randn(2, 48, 64, 64)
     with torch.no_grad():
         out = decoder(inputs)
@@ -14,7 +19,12 @@ def test_conv_image_decoder():
 
 
 def test_conv1x1_image_decoder():
-    decoder = ImageDecoder(postprocess_type="conv1x1", output_channels=12, input_channels=48, spatial_upsample=4)
+    decoder = ImageDecoder(
+        postprocess_type="conv1x1",
+        output_channels=12,
+        input_channels=48,
+        spatial_upsample=4,
+    )
     inputs = torch.randn(2, 48, 64, 64)
     with torch.no_grad():
         out = decoder(inputs)
@@ -43,7 +53,12 @@ def test_pixel_image_decoder():
 
 
 def test_conv_video_decoder():
-    decoder = ImageDecoder(postprocess_type="conv", output_channels=12, input_channels=48, spatial_upsample=4)
+    decoder = ImageDecoder(
+        postprocess_type="conv",
+        output_channels=12,
+        input_channels=48,
+        spatial_upsample=4,
+    )
     inputs = torch.randn(2, 3, 48, 64, 64)
     with torch.no_grad():
         out = decoder(inputs)
@@ -52,7 +67,12 @@ def test_conv_video_decoder():
 
 
 def test_conv1x1_video_decoder():
-    decoder = ImageDecoder(postprocess_type="conv1x1", output_channels=12, input_channels=48, spatial_upsample=4)
+    decoder = ImageDecoder(
+        postprocess_type="conv1x1",
+        output_channels=12,
+        input_channels=48,
+        spatial_upsample=4,
+    )
     inputs = torch.randn(2, 3, 48, 64, 64)
     with torch.no_grad():
         out = decoder(inputs)
@@ -62,11 +82,13 @@ def test_conv1x1_video_decoder():
 
 
 def test_conv3d_video_decoder():
-    decoder = ImageDecoder(postprocess_type="conv",
-                           output_channels=12,
-                           input_channels=48,
-                           spatial_upsample=4,
-                           temporal_upsample=2)
+    decoder = ImageDecoder(
+        postprocess_type="conv",
+        output_channels=12,
+        input_channels=48,
+        spatial_upsample=4,
+        temporal_upsample=2,
+    )
     inputs = torch.randn(2, 1, 48, 64, 64)
     with torch.no_grad():
         out = decoder(inputs)

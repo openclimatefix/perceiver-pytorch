@@ -51,14 +51,14 @@ class Conv2DUpsample(torch.nn.Module):
             out_channels=output_channels * 2,
             kernel_size=(4, 4),
             stride=(2, 2),
-            padding=(1,1)
+            padding=(1, 1),
         )
         self.transpose_conv2 = torch.nn.ConvTranspose2d(
             in_channels=output_channels * 2,
             out_channels=output_channels,
             kernel_size=(4, 4),
             stride=(2, 2),
-            padding=(1,1)
+            padding=(1, 1),
         )
 
     def forward(self, x):
@@ -93,7 +93,10 @@ class Conv3DUpsample(torch.nn.Module):
         # The intermediate channels are (output channels) * 2^(number of upsamples - 1 - index of the current upsample)
         # The decoder sets the number of upsamples as log2(upsample_value), and this changes the number of channels
         # in a similar way, so it all scales together.
-        intermediate_output_channels = [output_channels * pow(2, num_upsamples - 1 - i) for i in range(0,num_upsamples)]
+        intermediate_output_channels = [
+            output_channels * pow(2, num_upsamples - 1 - i)
+            for i in range(0, num_upsamples)
+        ]
         intermediate_input_channels = [input_channels] + intermediate_output_channels
 
         self.layers = torch.nn.ModuleList()
