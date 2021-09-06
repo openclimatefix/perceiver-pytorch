@@ -91,6 +91,8 @@ class Conv3DUpsample(torch.nn.Module):
 
         # create the input and output changesl for the different layers
         # The intermediate channels are (output channels) * 2^(number of upsamples - 1 - index of the current upsample)
+        # The decoder sets the number of upsamples as log2(upsample_value), and this changes the number of channels
+        # in a similar way, so it all scales together.
         intermediate_output_channels = [output_channels * pow(2, num_upsamples - 1 - i) for i in range(0,num_upsamples)]
         intermediate_input_channels = [input_channels] + intermediate_output_channels
 
