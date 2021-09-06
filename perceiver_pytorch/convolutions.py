@@ -113,7 +113,7 @@ class Conv3DUpsample(torch.nn.Module):
             # D = (D-1) * stride + (kernel - 1) + 2 = D * stride
 
             self.layers.append(conv)
-            if i != num_upsamples - i:
+            if i != num_upsamples - 1:
                 self.layers.append(torch.nn.ReLU())
 
     def forward(self, x):
