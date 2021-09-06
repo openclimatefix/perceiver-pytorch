@@ -38,7 +38,7 @@ class MultiPerceiver(torch.nn.Module):
         self.output_channels = output_channels
         self.modalities = {modality.name: modality for modality in modalities}
         # we encode modality with one hot encoding, so need one dim per modality:
-        modality_encoding_dim = sum([1 for _ in modalities])
+        modality_encoding_dim = len(modalities)
         # input_dim is the maximum dimension over all input modalities:
         input_dim = (
             max(modality.input_dim for modality in modalities) + modality_encoding_dim
