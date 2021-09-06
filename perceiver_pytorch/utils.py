@@ -11,6 +11,10 @@ def extract_image_patches(
     """
     Extract image patches in a way similar to TensorFlow extract_image_patches
     Taken from https://discuss.pytorch.org/t/tf-extract-image-patches-in-pytorch/43837/8
+
+    In the Perceiver JAX implementation they extract image patches matching TensorFlow's SAME padding.
+    PyTorch doesn't have that same kind of option, so this is a way to do that.
+
     :param x: Input Torch Tensor
     :param kernel: Size of kernel
     :param stride: Stride of patch
