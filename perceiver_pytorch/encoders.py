@@ -20,13 +20,15 @@ class ImageEncoder(torch.nn.Module):
         """
         Image encoder class, modeled off the JAX version
         https://github.com/deepmind/deepmind-research/blob/769bfdbeafbcb472cb8e2c6cfa746b53ac82efc2/perceiver/io_processors.py#L291-L438
-        :param input_channels: Number of input channels of the original image/video
-        :param prep_type: How to encode the images, one of conv, patches, pixels, or conv1x1
-        :param spatial_downsample: How much to downsample spatially
-        :param temporal_downsample: How much to downsample temporally
-        :param output_channels: Number of output channels to send to Perceiver
-        :param conv_after_patching: Whether to use convolutions after creating patches
-        :param conv2d_use_batchnorm: Whether to use batch norm
+
+        Args:
+            input_channels: Number of input channels of the original image/video
+            prep_type: How to encode the images, one of conv, patches, pixels, or conv1x1
+            spatial_downsample: How much to downsample spatially
+            temporal_downsample: How much to downsample temporally
+            output_channels: Number of output channels to send to Perceiver
+            conv_after_patching: Whether to use convolutions after creating patches
+            conv2d_use_batchnorm: Whether to use batch norm
         """
         super().__init__()
         self.conv_after_patching = conv_after_patching

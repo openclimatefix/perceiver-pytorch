@@ -28,9 +28,16 @@ def modality_encoding(
     """
     Return one-hot encoding of modality given num_modalities, batch size and axes.
     The result need to be compatible with the modality data for concatenation.
-    :param modality_index: The index of this modality i.e. if there are 3 modalities, this would be 0, 1, or 2
-    :param num_modalities: Total number of modalities
-    :return: One hot encoding of which modality the input is
+
+    Args:
+        batch_size: Batch size of the input
+        axes: The size of each axis, other than batch size, of the input
+        modality_index:  The index of this modality i.e. if there are 3 modalities, this would be 0, 1, or 2
+        num_modalities: Total number of modalities
+
+    Returns:
+        One hot encoding of which modality the input is
+
     """
     one_hot = torch.eye(num_modalities, num_modalities)[modality_index]
     to_expand = [batch_size]

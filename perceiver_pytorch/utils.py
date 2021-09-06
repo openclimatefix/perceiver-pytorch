@@ -15,11 +15,15 @@ def extract_image_patches(
     In the Perceiver JAX implementation they extract image patches matching TensorFlow's SAME padding.
     PyTorch doesn't have that same kind of option, so this is a way to do that.
 
-    :param x: Input Torch Tensor
-    :param kernel: Size of kernel
-    :param stride: Stride of patch
-    :param dilation: Dilation rate
-    :return: Tensor of size [Batch, Height, Width, Channels*kernel*stride]
+    Args:
+        x: Input Torch Tensor
+        kernel: Size of kernel
+        stride: Stride of patch
+        dilation: Dilation rate
+
+    Returns:
+    Tensor of size [Batch, Height, Width, Channels*kernel*stride]
+
     """
     # Do TF 'SAME' Padding
     b, c, h, w = x.shape
