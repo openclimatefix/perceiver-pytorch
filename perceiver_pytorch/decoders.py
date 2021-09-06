@@ -56,16 +56,16 @@ class ImageDecoder(torch.nn.Module):
             if output_channels == -1:
                 raise ValueError("Expected value for n_outputs")
             if self.temporal_upsample != 1:
+                raise ValueError("Convolutional temporal upsampling is currently not supported")
+                #def int_log2(x):
+                #    return int(np.round(np.log(x) / np.log(2)))
 
-                def int_log2(x):
-                    return int(np.round(np.log(x) / np.log(2)))
-
-                self.convnet = Conv3DUpsample(
-                    input_channels=input_channels,
-                    output_channels=output_channels,
-                    num_temporal_upsamples=int_log2(temporal_upsample),
-                    num_space_upsamples=int_log2(spatial_upsample),
-                )
+                #self.convnet = Conv3DUpsample(
+                #    input_channels=input_channels,
+                #    output_channels=output_channels,
+                #    num_temporal_upsamples=int_log2(temporal_upsample),
+                #    num_space_upsamples=int_log2(spatial_upsample),
+                #)
             else:
                 assert self.spatial_upsample == 4, "Conv2DUpsample only support 4x spatial upsample right now"
                 self.convnet = Conv2DUpsample(
