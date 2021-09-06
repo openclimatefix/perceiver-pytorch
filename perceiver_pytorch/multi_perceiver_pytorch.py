@@ -127,7 +127,7 @@ class MultiPerceiver(torch.nn.Module):
         # Should include the query shape here for the output we want, could be learned embeddings, repeated input frames of the same shape that is desired, etc.
         perceiver_output = self.perceiver.forward(data, mask, queries)
 
-        # For multiple modalities, they are split after this beack into different tensors
+        # For multiple modalities, they are split after this back into different tensors
         # For Sat images, we just want the images, not the other ones, so can leave it as is?
 
         # Have to decode back into future Sat image frames
