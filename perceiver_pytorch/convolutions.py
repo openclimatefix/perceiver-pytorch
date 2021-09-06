@@ -88,6 +88,11 @@ class Conv3DUpsample(torch.nn.Module):
         temporal_stride = 2
         space_stride = 2
         num_upsamples = max(num_space_upsamples, num_temporal_upsamples)
+
+        # create the input and output changesl for the different layers
+        intermediate_output_channels = [output_channels * pow(2, num_upsamples - 1 - i) for i in range(0,num_upsamples)]
+        intermediate_input_channels = [input_channels] + intermediate_output_channels
+
         self.layers = torch.nn.ModuleList()
         for i in range(num_upsamples):
             if i >= num_temporal_upsamples:
@@ -95,16 +100,31 @@ class Conv3DUpsample(torch.nn.Module):
             if i >= num_space_upsamples:
                 space_stride = 1
 
-            channels = output_channels * pow(2, num_upsamples - 1 - i)
+            input_channels = input_channels if i == 0 else output_channels
+            stride = (temporal_stride, space_stride, space_stride)
             conv = torch.nn.ConvTranspose3d(
-                in_channels=input_channels,
-                out_channels=channels,
-                stride=(temporal_stride, space_stride, space_stride),
-                kernel_size=(4, 4, 4),
+                in_channels=intermediate_input_channels[i],
+                out_channels=intermediate_output_channels[i],
+                stride=stride,
+                kernel_size=stride,
             )
+            # see output dims calculations - https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose3d.html
+            # if kernel=stride, and dilation -1
+            # D = (D-1) * stride + (kernel - 1) + 2 = D * stride
+
             self.layers.append(conv)
             if i != num_upsamples - i:
                 self.layers.append(torch.nn.ReLU())
 
     def forward(self, x):
-        return self.layers.forward(x)
+        # Move around to Channels first
+        x = x.permute(0, 2, 1, 3, 4)
+
+        # loop over layers
+        for layer in self.layers:
+            x = layer(x)
+
+        x = F.relu(x)
+        # Move back
+        x = x.permute(0, 2, 1, 3, 4)
+        return x
