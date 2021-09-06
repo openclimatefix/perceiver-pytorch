@@ -62,16 +62,16 @@ def test_conv1x1_video_decoder():
 
 
 def test_conv3d_video_decoder():
-   decoder = ImageDecoder(postprocess_type="conv",
-                          output_channels=12,
-                          input_channels=48,
-                          spatial_upsample=4,
-                          temporal_upsample=2)
-   inputs = torch.randn(2, 1, 48, 64, 64)
-   with torch.no_grad():
-       out = decoder(inputs)
-   assert not torch.isnan(out).any(), "Output included NaNs"
-   assert out.size() == (2, 2, 12, 256, 256)
+    decoder = ImageDecoder(postprocess_type="conv",
+                           output_channels=12,
+                           input_channels=48,
+                           spatial_upsample=4,
+                           temporal_upsample=2)
+    inputs = torch.randn(2, 1, 48, 64, 64)
+    with torch.no_grad():
+        out = decoder(inputs)
+    assert not torch.isnan(out).any(), "Output included NaNs"
+    assert out.size() == (2, 2, 12, 256, 256)
 
 
 def test_patches_video_decoder():
