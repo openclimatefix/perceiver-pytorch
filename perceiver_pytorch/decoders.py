@@ -23,6 +23,8 @@ class ImageDecoder(torch.nn.Module):
             spatial_upsample: How much to spatially upsample
             temporal_upsample: How much to temporally upsample
             output_channels: Number of output channels, should be the final desired number of channels
+                Has to explicitly set for conv and conv1x1 options, otherwise an error will be raised.
+                Ignored for patches and pixels options.
             input_channels: Number of input channels to decoder
             input_reshape_size: The size to reshape the input to
         """
