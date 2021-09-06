@@ -2,9 +2,9 @@ from perceiver_pytorch.perceiver_pytorch import fourier_encode
 from perceiver_pytorch.perceiver_io import PerceiverIO
 from perceiver_pytorch.modalities import InputModality, modality_encoding
 import torch
-from typing import List, Iterable, Dict, Optional, Any
+from typing import List, Iterable, Dict, Optional, Any, Union
 from einops import rearrange, repeat
-
+from math import prod
 
 class MultiPerceiver(torch.nn.Module):
     def __init__(
@@ -15,7 +15,7 @@ class MultiPerceiver(torch.nn.Module):
         output_channels: int = 12,
         forecast_steps: int = 48,
         sine_only: bool = False,
-        output_shape: int = 32,
+        output_shape: Union[int, tuple[int, ...]] = 32,
         **kwargs,
     ):
         """
@@ -47,7 +47,10 @@ class MultiPerceiver(torch.nn.Module):
         self.max_modality_dim = input_dim
         kwargs.pop("dim", None)
         # Want toe logit_dim to be the same as the channels * width or height
-        kwargs["logits_dim"] = output_shape * self.output_channels
+        if isinstance(output_shape, int):
+            kwargs["logits_dim"] = output_shape * self.output_channels
+        else:
+            kwargs["logits_dim"] = prod(output_shape) * self.output_channels
         self.perceiver = PerceiverIO(dim=input_dim, **kwargs)
 
     def decode_output(self, data):
@@ -70,7 +73,7 @@ class MultiPerceiver(torch.nn.Module):
             modality = self.modalities[modality_name]
             b, *axis, _ = data.size()
             assert len(axis) == modality.input_axis, (
-                f"input data must have the right number of  for modality {modality_name}. "
+                f"input data must have the right number of axes for modality {modality_name}. "
                 f"Expected {modality.input_axis} while forward argument offered {len(axis)}"
             )
             batch_sizes.add(b)
