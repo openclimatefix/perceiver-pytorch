@@ -79,9 +79,9 @@ class Conv3DUpsample(torch.nn.Module):
         """
         Simple convolutional auto-encoder
         Args:
-            output_channels:
-            num_temporal_upsamples:
-            num_space_upsamples:
+            output_channels: Final output channels
+            num_temporal_upsamples: Number of temporal upsamples to perform
+            num_space_upsamples: Number of spatial upsamples to perform
         """
 
         super().__init__()
@@ -90,6 +90,7 @@ class Conv3DUpsample(torch.nn.Module):
         num_upsamples = max(num_space_upsamples, num_temporal_upsamples)
 
         # create the input and output changesl for the different layers
+        # The intermediate channels are (output channels) * 2^(number of upsamples - 1 - index of the current upsample)
         intermediate_output_channels = [output_channels * pow(2, num_upsamples - 1 - i) for i in range(0,num_upsamples)]
         intermediate_input_channels = [input_channels] + intermediate_output_channels
 
