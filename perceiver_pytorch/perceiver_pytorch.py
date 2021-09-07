@@ -279,9 +279,9 @@ class Perceiver(nn.Module):
             # for all axes.
             enc_pos = encode_position(b,
                                       axis,
-                                      modality.max_freq,
-                                      modality.num_freq_bands,
-                                      modality.freq_base,
+                                      self.max_freq,
+                                      self.num_freq_bands,
+                                      self.freq_base,
                                       sine_only=self.sine_only).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
