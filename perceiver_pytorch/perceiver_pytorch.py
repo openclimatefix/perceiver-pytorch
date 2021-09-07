@@ -282,7 +282,7 @@ class Perceiver(nn.Module):
                                       modality.max_freq,
                                       modality.num_freq_bands,
                                       modality.freq_base,
-                                      sine_only=self.sine_only)
+                                      sine_only=self.sine_only).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
 

@@ -89,7 +89,7 @@ class MultiPerceiver(torch.nn.Module):
                                           modality.max_freq,
                                           modality.num_freq_bands,
                                           modality.freq_base,
-                                          sine_only=self.sine_only)
+                                          sine_only=self.sine_only).type_as(data)
 
             # Figure out padding for this modality, given max dimension across all modalities:
             padding_size = self.max_modality_dim - modality.input_dim - num_modalities
