@@ -4,14 +4,15 @@ with open("requirements.txt") as f:
     install_requires = f.read().splitlines()
 
 setup(
-    name="perceiver-pytorch",
+    name="perceiverio",
     packages=find_packages(),
-    version="0.4.0",
+    version="0.5.0",
     license="MIT",
-    description="Perceiver - Pytorch",
-    author="Phil Wang",
-    author_email="lucidrains@gmail.com",
-    url="https://github.com/lucidrains/perceiver-pytorch",
+    description="Multi Perceiver - Pytorch",
+    author="Jacob Bieker",
+    author_email="jacob@openclimatefix.org",
+    company="Open Climate Fix Ltd",
+    url="https://github.com/openclimatefix/perceiver-pytorch",
     keywords=[
         "artificial intelligence",
         "deep learning",
