@@ -6,6 +6,7 @@ import numpy as np
 import math
 import einops
 
+
 def extract_image_patches(
     x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1
 ) -> torch.Tensor:
@@ -98,7 +99,15 @@ def space_to_depth(
             " or rank 5 (batch, time, height, width, channels)"
         )
 
-def encode_position(batch_size: int, axis: list, max_frequency: float, num_frequency_bands: int, frequency_base: float, sine_only: bool = False):
+
+def encode_position(
+    batch_size: int,
+    axis: list,
+    max_frequency: float,
+    num_frequency_bands: int,
+    frequency_base: float,
+    sine_only: bool = False,
+) -> torch.Tensor:
     """
     Encode the Fourier Features and return them
 
@@ -132,12 +141,36 @@ def encode_position(batch_size: int, axis: list, max_frequency: float, num_frequ
     return enc_pos
 
 
-def fourier_encode(x, max_freq, num_bands=4, base=2, sine_only=False):
+def fourier_encode(
+    x: torch.Tensor,
+    max_freq: float,
+    num_bands: int = 4,
+    base: float = 2,
+    sine_only: bool = False,
+) -> torch.Tensor:
+    """
+    Create Fourier Encoding
+
+    Args:
+        x: Input Torch Tensor
+        max_freq: Maximum frequency for the Fourier features
+        num_bands: Number of frequency bands
+        base: Base frequency
+        sine_only: Whether to only use sine or both sine and cosine features
+
+    Returns:
+        Torch Tensor with the fourier position encoded concatenated
+    """
     x = x.unsqueeze(-1)
     device, dtype, orig_x = x.device, x.dtype, x
 
     scales = torch.logspace(
-        0.0, log(max_freq / 2) / log(base), num_bands, base=base, device=device, dtype=dtype
+        0.0,
+        log(max_freq / 2) / log(base),
+        num_bands,
+        base=base,
+        device=device,
+        dtype=dtype,
     )
     scales = scales[(*((None,) * (len(x.shape) - 1)), Ellipsis)]
 
