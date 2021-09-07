@@ -8,11 +8,12 @@ from perceiver_pytorch.perceiver_pytorch import (
     exists,
     default,
     cache_fn,
-    fourier_encode,
     PreNorm,
     FeedForward,
     Attention,
 )
+from perceiver_pytorch.utils import fourier_encode
+
 
 # latent mixer
 

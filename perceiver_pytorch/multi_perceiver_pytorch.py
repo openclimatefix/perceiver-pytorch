@@ -1,6 +1,6 @@
-from perceiver_pytorch.perceiver_pytorch import fourier_encode
 from perceiver_pytorch.perceiver_io import PerceiverIO
 from perceiver_pytorch.modalities import InputModality, modality_encoding
+from perceiver_pytorch.utils import encode_position, fourier_encode
 import torch
 from typing import List, Iterable, Dict, Optional, Any, Union
 from einops import rearrange, repeat
@@ -84,25 +84,12 @@ class MultiPerceiver(torch.nn.Module):
             enc_pos = []
             if self.fourier_encode_data:
                 # calculate fourier encoded positions in the range of [-1, 1], for all axis
-
-                axis_pos = list(
-                    map(
-                        lambda size: torch.linspace(-1.0, 1.0, steps=size).type_as(
-                            data
-                        ),
-                        axis,
-                    )
-                )
-                pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
-                enc_pos = fourier_encode(
-                    pos,
-                    modality.max_freq,
-                    modality.num_freq_bands,
-                    modality.freq_base,
-                    sine_only=self.sine_only,
-                )
-                enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
-                enc_pos = repeat(enc_pos, "... -> b ...", b=b)
+                enc_pos = encode_position(b,
+                                          axis,
+                                          modality.max_freq,
+                                          modality.num_freq_bands,
+                                          modality.freq_base,
+                                          sine_only=self.sine_only)
 
             # Figure out padding for this modality, given max dimension across all modalities:
             padding_size = self.max_modality_dim - modality.input_dim - num_modalities

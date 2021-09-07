@@ -1,9 +1,10 @@
+from math import log, pi
+
 import torch
 import torch.nn.functional as F
 import numpy as np
 import math
 import einops
-
 
 def extract_image_patches(
     x: torch.Tensor, kernel: int, stride: int = 1, dilation: int = 1
@@ -96,3 +97,51 @@ def space_to_depth(
             "Frames should be of rank 4 (batch, height, width, channels)"
             " or rank 5 (batch, time, height, width, channels)"
         )
+
+def encode_position(batch_size: int, axis: list, max_frequency: float, num_frequency_bands: int, frequency_base: float, sine_only: bool = False):
+    """
+    Encode the Fourier Features and return them
+
+    Args:
+        batch_size: Batch size
+        axis: List containing the size of each axis
+        max_frequency: Max frequency
+        num_frequency_bands: Number of frequency bands to use
+        frequency_base: Base frequency
+        sine_only: (bool) Whether to only use Sine features or both Sine and Cosine, defaults to both
+
+    Returns:
+        Torch tensor containing the Fourier Features of shape [Batch, *axis]
+    """
+    axis_pos = list(
+        map(
+            lambda size: torch.linspace(-1.0, 1.0, steps=size),
+            axis,
+        )
+    )
+    pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
+    enc_pos = fourier_encode(
+        pos,
+        max_frequency,
+        num_frequency_bands,
+        frequency_base,
+        sine_only=sine_only,
+    )
+    enc_pos = einops.rearrange(enc_pos, "... n d -> ... (n d)")
+    enc_pos = einops.repeat(enc_pos, "... -> b ...", b=batch_size)
+    return enc_pos
+
+
+def fourier_encode(x, max_freq, num_bands=4, base=2, sine_only=False):
+    x = x.unsqueeze(-1)
+    device, dtype, orig_x = x.device, x.dtype, x
+
+    scales = torch.logspace(
+        0.0, log(max_freq / 2) / log(base), num_bands, base=base, device=device, dtype=dtype
+    )
+    scales = scales[(*((None,) * (len(x.shape) - 1)), Ellipsis)]
+
+    x = x * scales * pi
+    x = x.sin() if sine_only else torch.cat([x.sin(), x.cos()], dim=-1)
+    x = torch.cat((x, orig_x), dim=-1)
+    return x
