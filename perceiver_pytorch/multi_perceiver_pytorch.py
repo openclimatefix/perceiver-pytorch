@@ -142,8 +142,7 @@ class MultiPerceiver(torch.nn.Module):
         # This is how it is done in the official implementation, do a decoder query with cross attention, then just reshape the output
         # For timeseries, this is given as a query with T*H*W shape
         # For Flow Decoder, this is the same, except has a rescale factor
-        perceiver_output = rearrange(
-            perceiver_output, "b h (w c) -> b c h w", c=self.output_channels
-        )
+
+        # To keep this more general, leave the reshaping to postprocessing outside the model
 
         return perceiver_output
