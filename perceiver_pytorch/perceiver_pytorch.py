@@ -1,4 +1,3 @@
-from math import pi, log
 from functools import wraps
 
 import torch
@@ -8,6 +7,7 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 
 from perceiver_pytorch.rotary import SinusoidalEmbeddings, apply_rotary_emb
+from perceiver_pytorch.utils import encode_position
 
 # helpers
 
@@ -34,26 +34,6 @@ def cache_fn(f):
         return cache
 
     return cached_fn
-
-
-def fourier_encode(x, max_freq, num_bands=4, base=2):
-    x = x.unsqueeze(-1)
-    device, dtype, orig_x = x.device, x.dtype, x
-
-    scales = torch.logspace(
-        0.0,
-        log(max_freq / 2) / log(base),
-        num_bands,
-        base=base,
-        device=device,
-        dtype=dtype,
-    )
-    scales = scales[(*((None,) * (len(x.shape) - 1)), Ellipsis)]
-
-    x = x * scales * pi
-    x = torch.cat([x.sin(), x.cos()], dim=-1)
-    x = torch.cat((x, orig_x), dim=-1)
-    return x
 
 
 # helper classes
@@ -297,18 +277,12 @@ class Perceiver(nn.Module):
         if self.fourier_encode_data:
             # Calculate Fourier encoded positions in the range of [-1, 1],
             # for all axes.
-            axis_pos = list(
-                map(
-                    lambda size:
-                    torch.linspace(
-                        -1.0, 1.0, steps=size, device=device
-                    ),
-                    axis))
-            pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
-            enc_pos = fourier_encode(
-                pos, self.max_freq, self.num_freq_bands, base=self.freq_base)
-            enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
-            enc_pos = repeat(enc_pos, "... -> b ...", b=b)
+            enc_pos = encode_position(b,
+                                      axis,
+                                      self.max_freq,
+                                      self.num_freq_bands,
+                                      self.freq_base,
+                                      sine_only=self.sine_only).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
 
