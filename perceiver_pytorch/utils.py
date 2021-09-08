@@ -47,8 +47,8 @@ def extract_image_patches(
 
 
 def reverse_space_to_depth(
-    frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
-) -> np.ndarray:
+    frames: torch.Tensor, temporal_block_size: int = 1, spatial_block_size: int = 1
+) -> torch.Tensor:
     """Reverse space to depth transform.
     Works for images (dim = 4) and videos (dim = 5)"""
     if len(frames.shape) == 4:
@@ -74,8 +74,8 @@ def reverse_space_to_depth(
 
 
 def space_to_depth(
-    frames: np.ndarray, temporal_block_size: int = 1, spatial_block_size: int = 1
-) -> np.ndarray:
+    frames: torch.Tensor, temporal_block_size: int = 1, spatial_block_size: int = 1
+) -> torch.Tensor:
     """Space to depth transform.
     Works for images (dim = 4) and videos (dim = 5)"""
     if len(frames.shape) == 4:
