@@ -7,7 +7,7 @@ with open(requirementPath) as f:
     install_requires = f.read().splitlines()
 
 setup(
-    name="perceiverio",
+    name="perceiver-model",
     packages=find_packages(),
     version="0.7.0",
     license="MIT",

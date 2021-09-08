@@ -9,7 +9,7 @@ Implementation of <a href="https://arxiv.org/abs/2103.03206">Perceiver</a>, Gene
 ## Install
 
 ```bash
-$ pip install perceiverio
+$ pip install perceiver-model
 ```
 
 ## Usage
