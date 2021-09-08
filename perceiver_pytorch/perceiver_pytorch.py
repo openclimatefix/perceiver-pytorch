@@ -33,7 +33,9 @@ class Perceiver(nn.Module):
         self_per_cross_attn=1,
         self_attn_rel_pos=True
     ):
-        """The shape of the final attention mechanism will be:
+        """
+        Perceiver: https://arxiv.org/abs/2103.03206
+        The shape of the final attention mechanism will be:
         depth * (cross attention -> self_per_cross_attn * self attention)
 
         Args:
