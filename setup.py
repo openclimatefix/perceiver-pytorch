@@ -9,7 +9,7 @@ with open(requirementPath) as f:
 setup(
     name="perceiverio",
     packages=find_packages(),
-    version="0.6.0",
+    version="0.7.0",
     license="MIT",
     description="Multimodal Perceiver - Pytorch",
     author="Jacob Bieker, Jack Kelly, Peter Dudfield",
