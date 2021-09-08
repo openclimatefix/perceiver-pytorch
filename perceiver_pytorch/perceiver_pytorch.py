@@ -148,7 +148,6 @@ class Perceiver(nn.Module):
 
     def forward(self, data, mask=None):
         b, *axis, _ = data.shape
-        device = data.device
         assert (
             len(axis) == self.input_axis
         ), f"Input data must have {self.input_axis} axes, not {len(axis)}!"

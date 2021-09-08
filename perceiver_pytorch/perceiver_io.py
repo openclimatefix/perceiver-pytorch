@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from einops import rearrange, repeat
+from einops import repeat
 from perceiver_pytorch.layers import exists, cache_fn, PreNorm, FeedForward, Attention
 
 # main class
@@ -23,6 +23,23 @@ class PerceiverIO(nn.Module):
         weight_tie_layers = False,
         decoder_ff = False
     ):
+        """
+        PerceiverIO implementation from https://arxiv.org/abs/2107.14795
+
+        Args:
+            depth: Depth of the network
+            dim: dimension of sequence to be encoded
+            queries_dim: Dimension of the decoder queries
+            logits_dim: Dimension of final logits
+            num_latents: Number of latents
+            latent_dim: Latent dimension
+            cross_heads: Number of heads for cross attention
+            latent_heads: Number of heads for latent self-attention
+            cross_dim_head: Number of dimensions per cross attention head
+            latent_dim_head: Number of dimensions per latent self-attention head
+            weight_tie_layers: Whether to weight tie layers
+            decoder_ff: Whether to use a feed forward network on the decoder queries
+        """
         super().__init__()
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
 
@@ -88,39 +105,3 @@ class PerceiverIO(nn.Module):
 
         return self.to_logits(latents)
 
-# Perceiver LM example
-
-class PerceiverLM(nn.Module):
-    def __init__(
-        self,
-        *,
-        dim,
-        num_tokens,
-        max_seq_len,
-        **kwargs
-    ):
-        super().__init__()
-        self.token_emb = nn.Embedding(num_tokens, dim)
-        self.pos_emb = nn.Embedding(max_seq_len, dim)
-
-        self.perceiver_io = PerceiverIO(
-            dim = dim,
-            queries_dim = dim,
-            logits_dim = num_tokens,
-            **kwargs
-        )
-
-    def forward(
-        self,
-        x,
-        mask = None
-    ):
-        n, device = x.shape[1], x.device
-        x = self.token_emb(x)
-
-        pos_emb = self.pos_emb(torch.arange(n, device = device))
-        pos_emb = rearrange(pos_emb, 'n d -> () n d')
-        x = x + pos_emb
-
-        logits = self.perceiver_io(x, mask = mask, queries = x)
-        return logits
