@@ -14,7 +14,7 @@ long_description = (this_directory / "README.md").read_text()
 setup(
     name="perceiver-model",
     packages=find_packages(),
-    version="0.7.0",
+    version="0.7.1",
     license="MIT",
     description="Multimodal Perceiver - Pytorch",
     author="Jacob Bieker, Jack Kelly, Peter Dudfield",
