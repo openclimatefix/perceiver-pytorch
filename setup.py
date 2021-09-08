@@ -1,10 +1,15 @@
 from setuptools import setup, find_packages
-import os
-
-install_folder = os.path.dirname(os.path.realpath(__file__))
-requirementPath = install_folder + '/requirements.txt'
+from pathlib import Path
+this_directory = Path(__file__).parent
+requirementPath = this_directory / 'requirements.txt'
 with open(requirementPath) as f:
     install_requires = f.read().splitlines()
+
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 
 setup(
     name="perceiver-model",
@@ -22,6 +27,8 @@ setup(
         "transformer",
         "attention mechanism",
     ],
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=install_requires,
     classifiers=[
         "Development Status :: 4 - Beta",
