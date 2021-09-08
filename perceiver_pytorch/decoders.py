@@ -45,17 +45,23 @@ class ImageDecoder(torch.nn.Module):
         if postprocess_type == "pixels":
             # No postprocessing for pixels
             self.decoder = torch.nn.Identity()
-        elif postprocess_type == 'patches':
-            self.decoder = ImageDecoderPatches(spatial_upsample=spatial_upsample, temporal_upsample=temporal_upsample)
-        elif postprocess_type == 'conv':
-            self.decoder = ImageDecoderConv(spatial_upsample=spatial_upsample,
-                                            temporal_upsample=temporal_upsample,
-                                            output_channels=output_channels,
-                                            input_channels=input_channels)
-        elif postprocess_type == 'conv1x1':
-            self.decoder = ImageDecoderConv1x1(spatial_upsample=spatial_upsample,
-                                               output_channels=output_channels,
-                                               input_channels=input_channels)
+        elif postprocess_type == "patches":
+            self.decoder = ImageDecoderPatches(
+                spatial_upsample=spatial_upsample, temporal_upsample=temporal_upsample
+            )
+        elif postprocess_type == "conv":
+            self.decoder = ImageDecoderConv(
+                spatial_upsample=spatial_upsample,
+                temporal_upsample=temporal_upsample,
+                output_channels=output_channels,
+                input_channels=input_channels,
+            )
+        elif postprocess_type == "conv1x1":
+            self.decoder = ImageDecoderConv1x1(
+                spatial_upsample=spatial_upsample,
+                output_channels=output_channels,
+                input_channels=input_channels,
+            )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         if self.input_reshape_size is not None:
@@ -68,11 +74,11 @@ class ImageDecoder(torch.nn.Module):
 
 class ImageDecoderConv(torch.nn.Module):
     def __init__(
-            self,
-            spatial_upsample: int = 1,
-            temporal_upsample: int = 1,
-            output_channels: int = -1,
-            input_channels: int = 12,
+        self,
+        spatial_upsample: int = 1,
+        temporal_upsample: int = 1,
+        output_channels: int = -1,
+        input_channels: int = 12,
     ):
         """
         Convolutional image decoder that can upsample temporally and spatially
@@ -106,7 +112,7 @@ class ImageDecoderConv(torch.nn.Module):
             )
         else:
             assert (
-                    self.spatial_upsample == 4
+                self.spatial_upsample == 4
             ), "Conv2DUpsample only support 4x spatial upsample right now"
             self.convnet = Conv2DUpsample(
                 input_channels=input_channels, output_channels=output_channels
@@ -128,10 +134,10 @@ class ImageDecoderConv(torch.nn.Module):
 
 class ImageDecoderConv1x1(torch.nn.Module):
     def __init__(
-            self,
-            spatial_upsample: int = 1,
-            output_channels: int = -1,
-            input_channels: int = 12,
+        self,
+        spatial_upsample: int = 1,
+        output_channels: int = -1,
+        input_channels: int = 12,
     ):
         """
         Convolutional 1x1 image decoder
@@ -174,9 +180,7 @@ class ImageDecoderConv1x1(torch.nn.Module):
 
 class ImageDecoderPatches(torch.nn.Module):
     def __init__(
-            self,
-            spatial_upsample: int = 1,
-            temporal_upsample: int = 1,
+        self, spatial_upsample: int = 1, temporal_upsample: int = 1,
     ):
         """
         Patch-based image decoder

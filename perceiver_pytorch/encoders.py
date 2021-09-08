@@ -42,23 +42,33 @@ class ImageEncoder(torch.nn.Module):
             raise ValueError("Invalid prep_type!")
 
         if self.prep_type == "conv":
-            self.encoder = ImageEncoderConv(input_channels=input_channels,
-                                            temporal_downsample=temporal_downsample,
-                                            spatial_downsample=spatial_downsample,
-                                            output_channels=output_channels,
-                                            conv2d_use_batchnorm=conv2d_use_batchnorm)
+            self.encoder = ImageEncoderConv(
+                input_channels=input_channels,
+                temporal_downsample=temporal_downsample,
+                spatial_downsample=spatial_downsample,
+                output_channels=output_channels,
+                conv2d_use_batchnorm=conv2d_use_batchnorm,
+            )
         elif self.prep_type == "conv1x1":
-            self.encoder = ImageEncoderConv1x1(input_channels=input_channels,
-                                            spatial_downsample=spatial_downsample,
-                                            output_channels=output_channels)
-        elif self.prep_type == 'patches':
-            self.encoder = ImageEncoderPatches(temporal_downsample=temporal_downsample,
-                                                spatial_downsample=spatial_downsample)
-        elif self.prep_type == 'pixels':
-            self.encoder = ImageEncoderPixel(temporal_downsample=temporal_downsample,
-                                            spatial_downsample=spatial_downsample)
-        elif self.prep_type == 'metnet':
-            self.encoder = ImageEncoderMetNet(crop_size=crop_size, use_space2depth=use_space2depth)
+            self.encoder = ImageEncoderConv1x1(
+                input_channels=input_channels,
+                spatial_downsample=spatial_downsample,
+                output_channels=output_channels,
+            )
+        elif self.prep_type == "patches":
+            self.encoder = ImageEncoderPatches(
+                temporal_downsample=temporal_downsample,
+                spatial_downsample=spatial_downsample,
+            )
+        elif self.prep_type == "pixels":
+            self.encoder = ImageEncoderPixel(
+                temporal_downsample=temporal_downsample,
+                spatial_downsample=spatial_downsample,
+            )
+        elif self.prep_type == "metnet":
+            self.encoder = ImageEncoderMetNet(
+                crop_size=crop_size, use_space2depth=use_space2depth
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.encoder(x)
@@ -66,12 +76,12 @@ class ImageEncoder(torch.nn.Module):
 
 class ImageEncoderConv(torch.nn.Module):
     def __init__(
-            self,
-            input_channels: int = 12,
-            spatial_downsample: int = 4,
-            temporal_downsample: int = 1,
-            output_channels: int = 64,
-            conv2d_use_batchnorm: bool = True,
+        self,
+        input_channels: int = 12,
+        spatial_downsample: int = 4,
+        temporal_downsample: int = 1,
+        output_channels: int = 64,
+        conv2d_use_batchnorm: bool = True,
     ):
         """
         Convolutional image encoder that can spatially and temporally downsample
@@ -90,9 +100,7 @@ class ImageEncoderConv(torch.nn.Module):
 
         # Downsampling with conv is currently restricted
         convnet_num_layers = math.log(spatial_downsample, 4)
-        convnet_num_layers_is_int = convnet_num_layers == np.round(
-            convnet_num_layers
-        )
+        convnet_num_layers_is_int = convnet_num_layers == np.round(convnet_num_layers)
         if not convnet_num_layers_is_int or temporal_downsample != 1:
             raise ValueError(
                 "Only powers of 4 expected for spatial "
@@ -105,7 +113,7 @@ class ImageEncoderConv(torch.nn.Module):
             output_channels=output_channels,
             input_channels=input_channels,
             use_batchnorm=conv2d_use_batchnorm,
-            )
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if len(x.shape) == 5:
@@ -121,10 +129,10 @@ class ImageEncoderConv(torch.nn.Module):
 
 class ImageEncoderConv1x1(torch.nn.Module):
     def __init__(
-            self,
-            input_channels: int = 12,
-            spatial_downsample: int = 4,
-            output_channels: int = 64,
+        self,
+        input_channels: int = 12,
+        spatial_downsample: int = 4,
+        output_channels: int = 64,
     ):
         """
         Convolutional 1x1 encoder that can spatially downsample
@@ -161,9 +169,7 @@ class ImageEncoderConv1x1(torch.nn.Module):
 
 class ImageEncoderPatches(torch.nn.Module):
     def __init__(
-            self,
-            spatial_downsample: int = 4,
-            temporal_downsample: int = 1,
+        self, spatial_downsample: int = 4, temporal_downsample: int = 1,
     ):
         """
         Image encoder that uses patches
@@ -192,9 +198,7 @@ class ImageEncoderPatches(torch.nn.Module):
 
 class ImageEncoderPixel(torch.nn.Module):
     def __init__(
-            self,
-            spatial_downsample: int = 4,
-            temporal_downsample: int = 1,
+        self, spatial_downsample: int = 4, temporal_downsample: int = 1,
     ):
         """
         Image encoder class for simple downsampling with pixels
@@ -218,7 +222,7 @@ class ImageEncoderPixel(torch.nn.Module):
                 :,
                 :: self.spatial_downsample,
                 :: self.spatial_downsample,
-                ]
+            ]
         else:
             raise ValueError("Unsupported data format for pixels")
 
@@ -227,9 +231,7 @@ class ImageEncoderPixel(torch.nn.Module):
 
 class ImageEncoderMetNet(nn.Module):
     def __init__(
-            self,
-            crop_size: int = 256,
-            use_space2depth: bool = True,
+        self, crop_size: int = 256, use_space2depth: bool = True,
     ):
         """
         Performs the MetNet preprocessing of mean pooling Sat channels, followed by
