@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-#with open("requirements.txt") as f:
-#    install_requires = f.read().splitlines()
+with open("requirements.txt") as f:
+    install_requires = f.read().splitlines()
 
 setup(
     name="perceiverio",
@@ -19,11 +19,7 @@ setup(
         "transformer",
         "attention mechanism",
     ],
-    install_requires=[
-        "einops>=0.3",
-        "torch>=1.6",
-        "numpy"
-    ],
+    install_requires=install_requires,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
