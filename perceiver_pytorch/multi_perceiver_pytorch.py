@@ -51,7 +51,7 @@ class MultiPerceiver(torch.nn.Module):
         if isinstance(output_shape, int):
             kwargs["logits_dim"] = output_shape * self.output_channels
         else:
-            kwargs["logits_dim"] = prod(output_shape) * self.output_channels
+            kwargs["logits_dim"] = prod(output_shape)
         self.perceiver = PerceiverIO(dim=input_dim, **kwargs)
 
     def decode_output(self, data):
