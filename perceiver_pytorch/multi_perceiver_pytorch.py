@@ -2,7 +2,7 @@ from perceiver_pytorch.perceiver_io import PerceiverIO
 from perceiver_pytorch.modalities import InputModality, modality_encoding
 from perceiver_pytorch.utils import encode_position, fourier_encode
 import torch
-from typing import List, Iterable, Dict, Optional, Any, Union
+from typing import List, Iterable, Dict, Optional, Any, Union, Tuple
 from einops import rearrange, repeat
 from math import prod
 
@@ -16,7 +16,7 @@ class MultiPerceiver(torch.nn.Module):
         output_channels: int = 12,
         forecast_steps: int = 48,
         sine_only: bool = False,
-        output_shape: Union[int, tuple[int, ...]] = 32,
+        output_shape: Union[int, Tuple[int, ...]] = 32,
         **kwargs,
     ):
         """
