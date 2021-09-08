@@ -74,8 +74,7 @@ class ImageEncoderConv(torch.nn.Module):
             conv2d_use_batchnorm: bool = True,
     ):
         """
-        Image encoder class, modeled off the JAX version
-        https://github.com/deepmind/deepmind-research/blob/769bfdbeafbcb472cb8e2c6cfa746b53ac82efc2/perceiver/io_processors.py#L291-L438
+        Convolutional image encoder that can spatially and temporally downsample
 
         Args:
             input_channels: Number of input channels of the original image/video
@@ -128,8 +127,7 @@ class ImageEncoderConv1x1(torch.nn.Module):
             output_channels: int = 64,
     ):
         """
-        Image encoder class, modeled off the JAX version
-        https://github.com/deepmind/deepmind-research/blob/769bfdbeafbcb472cb8e2c6cfa746b53ac82efc2/perceiver/io_processors.py#L291-L438
+        Convolutional 1x1 encoder that can spatially downsample
 
         Args:
             input_channels: Number of input channels of the original image/video
@@ -168,11 +166,9 @@ class ImageEncoderPatches(torch.nn.Module):
             temporal_downsample: int = 1,
     ):
         """
-        Image encoder class, modeled off the JAX version
-        https://github.com/deepmind/deepmind-research/blob/769bfdbeafbcb472cb8e2c6cfa746b53ac82efc2/perceiver/io_processors.py#L291-L438
+        Image encoder that uses patches
 
         Args:
-            prep_type: How to encode the images, one of conv, patches, pixels, or conv1x1
             spatial_downsample: How much to downsample spatially
             temporal_downsample: How much to downsample temporally
         """
