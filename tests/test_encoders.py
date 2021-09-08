@@ -72,8 +72,8 @@ def test_pixels_video_downsample_encoder():
 
 def test_metnet_video_encoder():
     encoder = ImageEncoder(prep_type="metnet", crop_size=128)
-    image = torch.randn(2, 6, 12, 256, 256)
+    image = torch.randn(2, 6, 12, 512, 512)
     with torch.no_grad():
         out = encoder(image)
     assert not torch.isnan(out).any(), "Output included NaNs"
-    assert out.size() == (2, 6, 192, 128, 128)
+    assert out.size() == (2, 6, 96, 128, 128)
