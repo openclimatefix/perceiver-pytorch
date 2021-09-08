@@ -1,12 +1,15 @@
 from setuptools import setup, find_packages
+import os
 
-with open("requirements.txt") as f:
+install_folder = os.path.dirname(os.path.realpath(__file__))
+requirementPath = install_folder + '/requirements.txt'
+with open(requirementPath) as f:
     install_requires = f.read().splitlines()
 
 setup(
     name="perceiverio",
     packages=find_packages(),
-    version="0.5.0",
+    version="0.6.0",
     license="MIT",
     description="Multimodal Perceiver - Pytorch",
     author="Jacob Bieker, Jack Kelly, Peter Dudfield",
