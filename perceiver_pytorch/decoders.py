@@ -160,7 +160,7 @@ class ImageDecoderConv1x1(torch.nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         # Convnet image featurization.
-        if len(inputs.shape) == 5 and self.temporal_upsample == 1:
+        if len(inputs.shape) == 5:
             # Timeseries, do it to each timestep independently
             outs = []
             for i in range(inputs.shape[1]):
