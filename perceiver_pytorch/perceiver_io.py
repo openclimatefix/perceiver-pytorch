@@ -1,104 +1,8 @@
-from math import pi, log
-from functools import wraps
-
 import torch
-from torch import nn, einsum
-import torch.nn.functional as F
+from torch import nn
 
-from einops import rearrange, repeat
-
-# helpers
-
-def exists(val):
-    return val is not None
-
-def default(val, d):
-    return val if exists(val) else d
-
-def cache_fn(f):
-    cache = None
-    @wraps(f)
-    def cached_fn(*args, _cache = True, **kwargs):
-        if not _cache:
-            return f(*args, **kwargs)
-        nonlocal cache
-        if cache is not None:
-            return cache
-        cache = f(*args, **kwargs)
-        return cache
-    return cached_fn
-
-# helper classes
-
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn, context_dim = None):
-        super().__init__()
-        self.fn = fn
-        self.norm = nn.LayerNorm(dim)
-        self.norm_context = nn.LayerNorm(context_dim) if exists(context_dim) else None
-
-    def forward(self, x, **kwargs):
-        x = self.norm(x)
-
-        if exists(self.norm_context):
-            context = kwargs['context']
-            normed_context = self.norm_context(context)
-            kwargs.update(context = normed_context)
-
-        return self.fn(x, **kwargs)
-
-class GEGLU(nn.Module):
-    def forward(self, x):
-        x, gates = x.chunk(2, dim = -1)
-        return x * F.gelu(gates)
-
-class FeedForward(nn.Module):
-    def __init__(self, dim, mult = 4):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(dim, dim * mult * 2),
-            GEGLU(),
-            nn.Linear(dim * mult, dim)
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-class Attention(nn.Module):
-    def __init__(self, query_dim, context_dim = None, heads = 8, dim_head = 64):
-        super().__init__()
-        inner_dim = dim_head * heads
-        context_dim = default(context_dim, query_dim)
-        self.scale = dim_head ** -0.5
-        self.heads = heads
-
-        self.to_q = nn.Linear(query_dim, inner_dim, bias = False)
-        self.to_kv = nn.Linear(context_dim, inner_dim * 2, bias = False)
-        self.to_out = nn.Linear(inner_dim, query_dim)
-
-    def forward(self, x, context = None, mask = None):
-        h = self.heads
-
-        q = self.to_q(x)
-        context = default(context, x)
-        k, v = self.to_kv(context).chunk(2, dim = -1)
-
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h = h), (q, k, v))
-
-        sim = einsum('b i d, b j d -> b i j', q, k) * self.scale
-
-        if exists(mask):
-            mask = rearrange(mask, 'b ... -> b (...)')
-            max_neg_value = -torch.finfo(sim.dtype).max
-            mask = repeat(mask, 'b j -> (b h) () j', h = h)
-            sim.masked_fill_(~mask, max_neg_value)
-
-        # attention, what we cannot get enough of
-        attn = sim.softmax(dim = -1)
-
-        out = einsum('b i j, b j d -> b i d', attn, v)
-        out = rearrange(out, '(b h) n d -> b n (h d)', h = h)
-        return self.to_out(out)
+from einops import repeat
+from perceiver_pytorch.layers import exists, cache_fn, PreNorm, FeedForward, Attention
 
 # main class
 
@@ -119,6 +23,23 @@ class PerceiverIO(nn.Module):
         weight_tie_layers = False,
         decoder_ff = False
     ):
+        """
+        PerceiverIO implementation from https://arxiv.org/abs/2107.14795
+
+        Args:
+            depth: Depth of the network
+            dim: dimension of sequence to be encoded
+            queries_dim: Dimension of the decoder queries
+            logits_dim: Dimension of final logits
+            num_latents: Number of latents
+            latent_dim: Latent dimension
+            cross_heads: Number of heads for cross attention
+            latent_heads: Number of heads for latent self-attention
+            cross_dim_head: Number of dimensions per cross attention head
+            latent_dim_head: Number of dimensions per latent self-attention head
+            weight_tie_layers: Whether to weight tie layers
+            decoder_ff: Whether to use a feed forward network on the decoder queries
+        """
         super().__init__()
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
 
@@ -184,39 +105,3 @@ class PerceiverIO(nn.Module):
 
         return self.to_logits(latents)
 
-# Perceiver LM example
-
-class PerceiverLM(nn.Module):
-    def __init__(
-        self,
-        *,
-        dim,
-        num_tokens,
-        max_seq_len,
-        **kwargs
-    ):
-        super().__init__()
-        self.token_emb = nn.Embedding(num_tokens, dim)
-        self.pos_emb = nn.Embedding(max_seq_len, dim)
-
-        self.perceiver_io = PerceiverIO(
-            dim = dim,
-            queries_dim = dim,
-            logits_dim = num_tokens,
-            **kwargs
-        )
-
-    def forward(
-        self,
-        x,
-        mask = None
-    ):
-        n, device = x.shape[1], x.device
-        x = self.token_emb(x)
-
-        pos_emb = self.pos_emb(torch.arange(n, device = device))
-        pos_emb = rearrange(pos_emb, 'n d -> () n d')
-        x = x + pos_emb
-
-        logits = self.perceiver_io(x, mask = mask, queries = x)
-        return logits

@@ -9,7 +9,7 @@ Implementation of <a href="https://arxiv.org/abs/2103.03206">Perceiver</a>, Gene
 ## Install
 
 ```bash
-$ pip install perceiver-pytorch
+$ pip install perceiver-model
 ```
 
 ## Usage
@@ -69,42 +69,6 @@ seq = torch.randn(1, 512, 32)
 queries = torch.randn(1, 128, 32)
 
 logits = model(seq, queries = queries) # (1, 128, 100) - (batch, decoder seq, logits dim)
-```
-
-As an example, using PerceiverIO as a language model
-
-```python
-import torch
-from perceiver_pytorch import PerceiverLM
-
-model = PerceiverLM(
-    num_tokens = 20000,          # number of tokens
-    dim = 32,                    # dimension of sequence to be encoded
-    depth = 6,                   # depth of net
-    max_seq_len = 2048,          # maximum sequence length
-    num_latents = 256,           # number of latents, or induced set points, or centroids. different papers giving it different names
-    latent_dim = 512,            # latent dimension
-    cross_heads = 1,             # number of heads for cross attention. paper said 1
-    latent_heads = 8,            # number of heads for latent self attention, 8
-    cross_dim_head = 64,         # number of dimensions per cross attention head
-    latent_dim_head = 64,        # number of dimensions per latent self attention head
-    weight_tie_layers = False    # whether to weight tie layers (optional, as indicated in the diagram)
-)
-
-seq = torch.randint(0, 20000, (1, 512))
-mask = torch.ones(1, 512).bool()
-
-logits = model(seq, mask = mask) # (1, 512, 20000)
-```
-
-## Experimental
-
-I have also included a version of Perceiver that includes bottom-up (in addition to top-down) attention, using the same scheme as presented in the original <a href="https://arxiv.org/abs/1810.00825">Set Transformers</a> paper as the <a href="https://github.com/lucidrains/isab-pytorch">Induced Set Attention Block</a>.
-
-You simply have to change the above import to
-
-```python
-from perceiver_pytorch.experimental import Perceiver
 ```
 
 ## Citations

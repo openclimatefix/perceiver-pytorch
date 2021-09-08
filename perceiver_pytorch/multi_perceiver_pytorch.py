@@ -21,6 +21,7 @@ class MultiPerceiver(torch.nn.Module):
     ):
         """
         PerceiverIO made to work more specifically with timeseries images and multimodal inputs https://arxiv.org/abs/2107.14795
+        This is a wrapper around the PerceiverIO implementation to encode the inputs correctly
 
         Args:
             input_channels: Number of input channels (int)
