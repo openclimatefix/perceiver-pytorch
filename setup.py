@@ -1,15 +1,20 @@
 from setuptools import setup, find_packages
-import os
-
-install_folder = os.path.dirname(os.path.realpath(__file__))
-requirementPath = install_folder + '/requirements.txt'
+from pathlib import Path
+this_directory = Path(__file__).parent
+requirementPath = this_directory / 'requirements.txt'
 with open(requirementPath) as f:
     install_requires = f.read().splitlines()
+
+# read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 
 setup(
     name="perceiver-model",
     packages=find_packages(),
-    version="0.7.0",
+    version="0.7.1",
     license="MIT",
     description="Multimodal Perceiver - Pytorch",
     author="Jacob Bieker, Jack Kelly, Peter Dudfield",
@@ -22,6 +27,8 @@ setup(
         "transformer",
         "attention mechanism",
     ],
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=install_requires,
     classifiers=[
         "Development Status :: 4 - Beta",
