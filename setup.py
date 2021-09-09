@@ -1,13 +1,7 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 this_directory = Path(__file__).parent
-requirementPath = this_directory / 'requirements.txt'
-with open(requirementPath) as f:
-    install_requires = f.read().splitlines()
-
-# read the contents of your README file
-from pathlib import Path
-this_directory = Path(__file__).parent
+install_requires = (this_directory / 'requirements.txt').read_text().splitlines()
 long_description = (this_directory / "README.md").read_text()
 
 
