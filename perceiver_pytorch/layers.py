@@ -53,13 +53,25 @@ class PreNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
+    """
+    Gaussian Error Gated Linear Unit.
+    See Shazer 2020: https://arxiv.org/abs/2002.05202
+    """
     def forward(self, x):
         x, gates = x.chunk(2, dim=-1)
         return x * F.gelu(gates)
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, mult=4, dropout=0.0):
+    """Feed forward neural net with GEGLU activation."""
+
+    def __init__(self, dim: int, mult: int = 4, dropout: float = 0.0):
+        """
+        Args:
+            dim: Input & Output size.
+            mult: The inner dimension of the FF net will be dim * mult.
+            dropout: Proportion to dropout after the GEGLU.
+        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, dim * mult * 2),
@@ -76,6 +88,16 @@ class Attention(nn.Module):
     def __init__(
         self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0
     ):
+        """
+        Args:
+            query_dim: Size of the queries.
+            context_dim: Size of the 'context' (the 'byte array' in the paper).
+                If None, will default to the query_dim.
+            heads: Number of attention heads.
+            dim_head: Number of dimensions per head.
+            dropout: Proportion to dropout (in the final linear layer).
+        """
+
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
@@ -91,12 +113,27 @@ class Attention(nn.Module):
         )
 
     def forward(self, x, context=None, mask=None, pos_emb=None):
+        """
+
+        Args:
+            x: The 'latent array' in the Perceiver paper.
+            context: The 'byte array' in the Perceiver paper (the input data).
+            mask:
+            pos_emb:
+
+        Returns:
+
+        """
+
         h = self.heads
 
         q = self.to_q(x)
         context = default(context, x)
         k, v = self.to_kv(context).chunk(2, dim=-1)
 
+        # Rearrange the query, key and value tensors.
+        # b = batch size; n = TODO (PD-2021-09-13)
+        # h = number of heads; d = number of dims per head.
         q, k, v = map(
             lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
         )

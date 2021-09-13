@@ -1,13 +1,13 @@
 import torch
-from torch import nn
-
 from einops import rearrange, repeat
+from torch import nn
 
 from perceiver_pytorch.layers import exists, cache_fn, PreNorm, FeedForward, Attention
 from perceiver_pytorch.rotary import SinusoidalEmbeddings
 from perceiver_pytorch.utils import encode_position
 
 # main class
+
 
 class Perceiver(nn.Module):
     def __init__(
@@ -32,7 +32,7 @@ class Perceiver(nn.Module):
         fourier_encode_data=True,
         sine_only: bool = False,
         self_per_cross_attn=1,
-        self_attn_rel_pos=True
+        self_attn_rel_pos=True,
     ):
         """
         Perceiver: https://arxiv.org/abs/2103.03206
@@ -44,7 +44,8 @@ class Perceiver(nn.Module):
           depth: Depth of net.
           max_freq: Maximum frequency, hyperparameter depending on how
               fine the data is.
-          freq_base: Base for the frequency
+          freq_base: Base of the logarithm function for Fourier position
+              encoding.
           input_channels: Number of channels for each token of the input.
           input_axis: Number of axes for input data (2 for images, 3 for video)
           num_latents: Number of latents, or induced set points, or centroids.
@@ -63,6 +64,7 @@ class Perceiver(nn.Module):
               if you are fourier encoding the data yourself.
             sine_only: Use only sine encoding in fourier encoding, compared to using sine and cos
           self_per_cross_attn: Number of self attention blocks per cross attn.
+          self_attn_rel_pos:
         """
         super().__init__()
         self.input_axis = input_axis
@@ -71,14 +73,11 @@ class Perceiver(nn.Module):
         self.freq_base = freq_base
 
         self.fourier_encode_data = fourier_encode_data
-        fourier_channels = (
-            (input_axis * ((num_freq_bands * 2) + 1))
-            if fourier_encode_data
-            else 0
-        )
+        fourier_channels = (input_axis * ((num_freq_bands * 2) + 1)) if fourier_encode_data else 0
         self.sine_only = sine_only
         input_dim = fourier_channels + input_channels
 
+        # Randomly initialise the 'latent array'.
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
 
         def get_cross_attn():
@@ -91,12 +90,11 @@ class Perceiver(nn.Module):
                     dim_head=cross_dim_head,
                     dropout=attn_dropout,
                 ),
-                context_dim=input_dim)
+                context_dim=input_dim,
+            )
 
         def get_cross_ff():
-            return PreNorm(
-                latent_dim,
-                FeedForward(latent_dim, dropout=ff_dropout))
+            return PreNorm(latent_dim, FeedForward(latent_dim, dropout=ff_dropout))
 
         def get_latent_attn():
             return PreNorm(
@@ -106,17 +104,16 @@ class Perceiver(nn.Module):
                     heads=latent_heads,
                     dim_head=latent_dim_head,
                     dropout=attn_dropout,
-                ))
+                ),
+            )
 
         def get_latent_ff():
-            return PreNorm(
-                latent_dim,
-                FeedForward(latent_dim, dropout=ff_dropout))
+            return PreNorm(latent_dim, FeedForward(latent_dim, dropout=ff_dropout))
 
         # Cache all the above functions.
         get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff = map(
-            cache_fn,
-            (get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff))
+            cache_fn, (get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff)
+        )
 
         self.layers = nn.ModuleList([])
         for i in range(depth):
@@ -132,7 +129,8 @@ class Perceiver(nn.Module):
                             get_latent_attn(**cache_args),
                             get_latent_ff(**cache_args),
                         ]
-                    ))
+                    )
+                )
 
             self.layers.append(
                 nn.ModuleList(
@@ -141,18 +139,26 @@ class Perceiver(nn.Module):
                         get_cross_ff(**cache_args),
                         self_attns,
                     ]
-                ))
+                )
+            )
 
-        self.to_logits = nn.Sequential(
-            nn.LayerNorm(latent_dim),
-            nn.Linear(latent_dim, num_classes))
+        self.to_logits = nn.Sequential(nn.LayerNorm(latent_dim), nn.Linear(latent_dim, num_classes))
 
         self.sinu_emb = None
         if self_attn_rel_pos:
             self.sinu_emb = SinusoidalEmbeddings(latent_dim_head)
 
     def forward(self, data, mask=None):
+        """
+        Args:
+          data: If sequential is True, then data must be of shape:
+              (batch size, sequence length, *axes) where axes would be width
+              and height for images.
+        """
+
         b, *axis, _ = data.shape
+        device = data.device
+
         assert (
             len(axis) == self.input_axis
         ), f"Input data must have {self.input_axis} axes, not {len(axis)}!"
@@ -160,19 +166,23 @@ class Perceiver(nn.Module):
         if self.fourier_encode_data:
             # Calculate Fourier encoded positions in the range of [-1, 1],
             # for all axes.
-            enc_pos = encode_position(b,
-                                      axis,
-                                      self.max_freq,
-                                      self.num_freq_bands,
-                                      self.freq_base,
-                                      sine_only=self.sine_only).type_as(data)
+            enc_pos = encode_position(
+                b,
+                axis,
+                self.max_freq,
+                self.num_freq_bands,
+                self.freq_base,
+                sine_only=self.sine_only,
+            ).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
 
-        # Concat to channels of data and flatten axis.
-        data = rearrange(data, "b ... d -> b (...) d")
+        # Concat to channels of data and flatten axes.
+        # b = batch size; d = last dimension of data
+        data = rearrange(data, "b ... d -> b (...) d", b=b)
 
         # x is the 'latent array' in the paper.
+        # b = batch size; n = number of latents; d = latent dimensions.
         x = repeat(self.latents, "n d -> b n d", b=b)
 
         # Rotary embeddings for latents, if specified.
