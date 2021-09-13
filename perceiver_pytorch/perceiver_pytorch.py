@@ -94,6 +94,7 @@ class Perceiver(nn.Module):
 
         # Randomly initialise the 'latent array'.
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
+        self.sequential = sequential
 
         def get_cross_attn():
             return PreNorm(
