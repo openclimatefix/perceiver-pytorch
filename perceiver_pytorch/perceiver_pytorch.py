@@ -32,7 +32,6 @@ class Perceiver(nn.Module):
         sine_only: bool = False,
         self_per_cross_attn=1,
         self_attn_rel_pos=True,
-        sequential=False
     ):
         """
         Perceiver: https://arxiv.org/abs/2103.03206
@@ -66,22 +65,12 @@ class Perceiver(nn.Module):
             sine_only: Use only sine encoding in fourier encoding, compared to using sine and cos
           self_per_cross_attn: Number of self attention blocks per cross attn.
           self_attn_rel_pos:
-          sequential: If True, use the Perceiver like a recurrent neural
-              network: Each cross attention gets a different timestep of
-              the input 'byte array' or 'context', and the output of forward()
-              has one timestep for the latent array for each timestep.
-              depth must be set to the sequence length.
         """
         super().__init__()
         self.input_axis = input_axis
         self.max_freq = max_freq
         self.num_freq_bands = num_freq_bands
         self.freq_base = freq_base
-
-        if sequential and not weight_tie_layers:
-            raise Warning(
-                '`sequential` is True but `weight_tie_layers` is False.'
-                'Are you sure you want different weights for each timestep?')
 
         self.fourier_encode_data = fourier_encode_data
         fourier_channels = (
@@ -94,7 +83,6 @@ class Perceiver(nn.Module):
 
         # Randomly initialise the 'latent array'.
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
-        self.sequential = sequential
 
         def get_cross_attn():
             return PreNorm(
@@ -158,10 +146,9 @@ class Perceiver(nn.Module):
                     ]
                 ))
 
-        if not sequential:
-            self.to_logits = nn.Sequential(
-                nn.LayerNorm(latent_dim),
-                nn.Linear(latent_dim, num_classes))
+        self.to_logits = nn.Sequential(
+            nn.LayerNorm(latent_dim),
+            nn.Linear(latent_dim, num_classes))
 
         self.sinu_emb = None
         if self_attn_rel_pos:
@@ -174,13 +161,8 @@ class Perceiver(nn.Module):
               (batch size, sequence length, *axes) where axes would be width
               and height for images.
         """
-        if self.sequential:
-            b, seq_length, *axis, _ = data.shape
-            assert (
-                seq_length == self.depth
-            ), 'The 2nd dim of `data` must be equal to the network `depth`.'
-        else:
-            b, *axis, _ = data.shape
+
+        b, *axis, _ = data.shape
         device = data.device
 
         assert (
@@ -205,7 +187,7 @@ class Perceiver(nn.Module):
             data = rearrange(
                 data,
                 "b, s ... d -> b, s (...) d",
-                b=b, s=seq_length)
+                b=b)
         else:
             data = rearrange(data, "b ... d -> b (...) d", b=b)
 
@@ -231,8 +213,5 @@ class Perceiver(nn.Module):
                 x = self_ff(x) + x
             output_per_timestep.append(x)
 
-        if self.sequential:
-            return torch.stack(output_per_timestep, dim=1)
-        else:
-            x = x.mean(dim=-2)
-            return self.to_logits(x)
+        x = x.mean(dim=-2)
+        return self.to_logits(x)
