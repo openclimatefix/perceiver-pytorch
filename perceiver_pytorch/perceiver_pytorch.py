@@ -183,13 +183,7 @@ class Perceiver(nn.Module):
 
         # Concat to channels of data and flatten axes.
         # b = batch size; d = last dimension of data
-        if self.sequential:
-            data = rearrange(
-                data,
-                "b, s ... d -> b, s (...) d",
-                b=b)
-        else:
-            data = rearrange(data, "b ... d -> b (...) d", b=b)
+        data = rearrange(data, "b ... d -> b (...) d", b=b)
 
         # x is the 'latent array' in the paper.
         # b = batch size; n = number of latents; d = latent dimensions.
@@ -201,6 +195,11 @@ class Perceiver(nn.Module):
         # Layers.
         for cross_attn, cross_ff, self_attns in self.layers:
             x = cross_attn(x, context=data, mask=mask) + x
+            x = cross_ff(x) + x
+
+            for self_attn, self_ff in self_attns:
+                x = self_attn(x, pos_emb=pos_emb) + x
+                x = self_ff(x) + x
 
         x = x.mean(dim=-2)
         return self.to_logits(x)
