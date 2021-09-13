@@ -132,7 +132,7 @@ class Attention(nn.Module):
         k, v = self.to_kv(context).chunk(2, dim=-1)
 
         # Rearrange the query, key and value tensors.
-        # b = batch size; n =
+        # b = batch size; n = TODO (PD-2021-09-13)
         # h = number of heads; d = number of dims per head.
         q, k, v = map(
             lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
