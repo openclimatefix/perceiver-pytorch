@@ -76,6 +76,7 @@ class Perceiver(nn.Module):
             if fourier_encode_data
             else 0
         )
+        self.sine_only = sine_only
         input_dim = fourier_channels + input_channels
 
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
