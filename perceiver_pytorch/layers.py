@@ -92,7 +92,7 @@ class Attention(nn.Module):
         Args:
             query_dim: Size of the queries.
             context_dim: Size of the 'context' (the 'byte array' in the paper).
-            If None, will default to the query_dim.
+                If None, will default to the query_dim.
             heads: Number of attention heads.
             dim_head: Number of dimensions per head.
             dropout: Proportion to dropout (in the final linear layer).
