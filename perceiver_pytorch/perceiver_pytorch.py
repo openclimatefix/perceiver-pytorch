@@ -8,6 +8,7 @@ from perceiver_pytorch.utils import encode_position
 
 # main class
 
+
 class Perceiver(nn.Module):
     def __init__(
         self,
@@ -45,7 +46,6 @@ class Perceiver(nn.Module):
               fine the data is.
           freq_base: Base of the logarithm function for Fourier position
               encoding.
-
           input_channels: Number of channels for each token of the input.
           input_axis: Number of axes for input data (2 for images, 3 for video)
           num_latents: Number of latents, or induced set points, or centroids.
@@ -73,11 +73,7 @@ class Perceiver(nn.Module):
         self.freq_base = freq_base
 
         self.fourier_encode_data = fourier_encode_data
-        fourier_channels = (
-            (input_axis * ((num_freq_bands * 2) + 1))
-            if fourier_encode_data
-            else 0
-        )
+        fourier_channels = (input_axis * ((num_freq_bands * 2) + 1)) if fourier_encode_data else 0
         self.sine_only = sine_only
         input_dim = fourier_channels + input_channels
 
@@ -94,12 +90,11 @@ class Perceiver(nn.Module):
                     dim_head=cross_dim_head,
                     dropout=attn_dropout,
                 ),
-                context_dim=input_dim)
+                context_dim=input_dim,
+            )
 
         def get_cross_ff():
-            return PreNorm(
-                latent_dim,
-                FeedForward(latent_dim, dropout=ff_dropout))
+            return PreNorm(latent_dim, FeedForward(latent_dim, dropout=ff_dropout))
 
         def get_latent_attn():
             return PreNorm(
@@ -109,17 +104,16 @@ class Perceiver(nn.Module):
                     heads=latent_heads,
                     dim_head=latent_dim_head,
                     dropout=attn_dropout,
-                ))
+                ),
+            )
 
         def get_latent_ff():
-            return PreNorm(
-                latent_dim,
-                FeedForward(latent_dim, dropout=ff_dropout))
+            return PreNorm(latent_dim, FeedForward(latent_dim, dropout=ff_dropout))
 
         # Cache all the above functions.
         get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff = map(
-            cache_fn,
-            (get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff))
+            cache_fn, (get_cross_attn, get_cross_ff, get_latent_attn, get_latent_ff)
+        )
 
         self.layers = nn.ModuleList([])
         for i in range(depth):
@@ -135,7 +129,8 @@ class Perceiver(nn.Module):
                             get_latent_attn(**cache_args),
                             get_latent_ff(**cache_args),
                         ]
-                    ))
+                    )
+                )
 
             self.layers.append(
                 nn.ModuleList(
@@ -144,11 +139,10 @@ class Perceiver(nn.Module):
                         get_cross_ff(**cache_args),
                         self_attns,
                     ]
-                ))
+                )
+            )
 
-        self.to_logits = nn.Sequential(
-            nn.LayerNorm(latent_dim),
-            nn.Linear(latent_dim, num_classes))
+        self.to_logits = nn.Sequential(nn.LayerNorm(latent_dim), nn.Linear(latent_dim, num_classes))
 
         self.sinu_emb = None
         if self_attn_rel_pos:
@@ -172,12 +166,14 @@ class Perceiver(nn.Module):
         if self.fourier_encode_data:
             # Calculate Fourier encoded positions in the range of [-1, 1],
             # for all axes.
-            enc_pos = encode_position(b,
-                                      axis,
-                                      self.max_freq,
-                                      self.num_freq_bands,
-                                      self.freq_base,
-                                      sine_only=self.sine_only).type_as(data)
+            enc_pos = encode_position(
+                b,
+                axis,
+                self.max_freq,
+                self.num_freq_bands,
+                self.freq_base,
+                sine_only=self.sine_only,
+            ).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
 
