@@ -1,202 +1,12 @@
-from math import pi, log
-from functools import wraps
-from typing import Optional
-
 import torch
-from torch import nn, einsum
-import torch.nn.functional as F
-
 from einops import rearrange, repeat
+from torch import nn
 
-from perceiver_pytorch.rotary import SinusoidalEmbeddings, apply_rotary_emb
-
-# helpers
-
-
-def exists(val):
-    return val is not None
-
-
-def default(val, d):
-    return val if exists(val) else d
-
-
-def cache_fn(f):
-    cache = None
-
-    @wraps(f)
-    def cached_fn(*args, _cache=True, **kwargs):
-        if not _cache:
-            return f(*args, **kwargs)
-        nonlocal cache
-        if cache is not None:
-            return cache
-        cache = f(*args, **kwargs)
-        return cache
-
-    return cached_fn
-
-
-def fourier_encode(x, max_freq, num_bands=4, base=2):
-    """Concatenate Fourier position features onto x.
-
-    Args:
-      x: Input data.
-      max_freq: Maximum frequency.
-      num_bands: Number of frequency bands to concatenate.
-      base: Base of the logarithm function.
-    """
-    x = x.unsqueeze(-1)
-    device, dtype, orig_x = x.device, x.dtype, x
-
-    scales = torch.logspace(
-        start=0.0,
-        end=log(max_freq / 2) / log(base),
-        steps=num_bands,  # Size of the 'scales' tensor.
-        base=base,  # Base of the log function.
-        device=device,
-        dtype=dtype,
-    )
-    scales = scales[(*((None,) * (len(x.shape) - 1)), Ellipsis)]
-
-    x = x * scales * pi
-    x = torch.cat([x.sin(), x.cos()], dim=-1)
-    x = torch.cat((x, orig_x), dim=-1)
-    return x
-
-
-# helper classes
-
-
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn, context_dim=None):
-        super().__init__()
-        self.fn = fn
-        self.norm = nn.LayerNorm(dim)
-        self.norm_context = (
-            nn.LayerNorm(context_dim) if exists(context_dim) else None
-        )
-
-    def forward(self, x, **kwargs):
-        x = self.norm(x)
-
-        if exists(self.norm_context):
-            context = kwargs["context"]
-            normed_context = self.norm_context(context)
-            kwargs.update(context=normed_context)
-
-        return self.fn(x, **kwargs)
-
-
-class GEGLU(nn.Module):
-    """Gaussian Error Gated Linear Unit.
-
-    See Shazer 2020: https://arxiv.org/abs/2002.05202
-    """
-    def forward(self, x):
-        x, gates = x.chunk(2, dim=-1)
-        return x * F.gelu(gates)
-
-
-class FeedForward(nn.Module):
-    """Feed forward neural net with GEGLU activation."""
-
-    def __init__(self, dim: int, mult: int = 4, dropout: float = 0.0):
-        """
-        Args:
-          dim: Input & Output size.
-          mult: The inner dimension of the FF net will be dim * mult.
-          dropout: Proportion to dropout after the GEGLU.
-        """
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(dim, dim * mult * 2),
-            GEGLU(),
-            nn.Dropout(dropout),
-            nn.Linear(dim * mult, dim),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-class Attention(nn.Module):
-    def __init__(
-            self,
-            query_dim: int,
-            context_dim: Optional[int] = None,
-            heads: int = 8,
-            dim_head: int = 64,
-            dropout: float = 0.0):
-        """
-        Args:
-          query_dim: Size of the queries.
-          context_dim: Size of the 'context' (the 'byte array' in the paper).
-            If None, will default to the query_dim.
-          heads: Number of attention heads.
-          dim_head: Number of dimensions per head.
-          dropout: Proportion to dropout (in the final linear layer).
-        """
-        super().__init__()
-        inner_dim = dim_head * heads
-        context_dim = default(context_dim, query_dim)
-
-        self.scale = dim_head ** -0.5
-        self.heads = heads
-
-        # Network to generate queries ('q').
-        self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
-
-        # Network to generate keys and values ('k' and 'v').
-        # Uses inner_dim * 2 out_features because the output is
-        # split in two in forward() function.
-        self.to_kv = nn.Linear(context_dim, inner_dim * 2, bias=False)
-
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, query_dim),
-            nn.Dropout(dropout))
-
-    def forward(self, x, context=None, mask=None, pos_emb=None):
-        """
-        Args:
-          x: The 'latent array' in the Perceiver paper.
-          context: The 'byte array' in the Perceiver paper (the input data).
-        """
-        h = self.heads
-
-        q = self.to_q(x)  # Generate query.
-        context = default(context, x)
-        k, v = self.to_kv(context).chunk(2, dim=-1)
-
-        # Rearrange the query, key and value tensors.
-        # b = batch size; n =
-        # h = number of heads; d = number of dims per head.
-        q, k, v = map(
-            lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h),
-            (q, k, v)
-        )
-
-        if exists(pos_emb):
-            q, k = apply_rotary_emb(q, k, pos_emb)
-
-        sim = einsum("b i d, b j d -> b i j", q, k) * self.scale
-
-        if exists(mask):
-            mask = rearrange(mask, "b ... -> b (...)")
-            max_neg_value = -torch.finfo(sim.dtype).max
-            mask = repeat(mask, "b j -> (b h) () j", h=h)
-            sim.masked_fill_(~mask, max_neg_value)
-
-        # attention, what we cannot get enough of
-        attn = sim.softmax(dim=-1)
-
-        out = einsum("b i j, b j d -> b i d", attn, v)
-        out = rearrange(out, "(b h) n d -> b n (h d)", h=h)
-        return self.to_out(out)
-
+from perceiver_pytorch.layers import exists, cache_fn, PreNorm, FeedForward, Attention
+from perceiver_pytorch.rotary import SinusoidalEmbeddings
+from perceiver_pytorch.utils import encode_position
 
 # main class
-
 
 class Perceiver(nn.Module):
     def __init__(
@@ -219,11 +29,14 @@ class Perceiver(nn.Module):
         ff_dropout=0.0,
         weight_tie_layers=False,
         fourier_encode_data=True,
+        sine_only: bool = False,
         self_per_cross_attn=1,
         self_attn_rel_pos=True,
         sequential=False
     ):
-        """The shape of the final attention mechanism will be:
+        """
+        Perceiver: https://arxiv.org/abs/2103.03206
+        The shape of the final attention mechanism will be:
         depth * (cross attention -> self_per_cross_attn * self attention)
 
         Args:
@@ -233,6 +46,7 @@ class Perceiver(nn.Module):
               fine the data is.
           freq_base: Base of the logarithm function for Fourier position
               encoding.
+
           input_channels: Number of channels for each token of the input.
           input_axis: Number of axes for input data (2 for images, 3 for video)
           num_latents: Number of latents, or induced set points, or centroids.
@@ -243,12 +57,13 @@ class Perceiver(nn.Module):
           cross_dim_head: Number of dimensions per cross attention head.
           latent_dim_head: Number of dimensions per latent self attention head.
           num_classes: Output number of classes.
-          attn_dropout:
-          ff_dropout:
+          attn_dropout: Attention dropout
+          ff_dropout: Feedforward dropout
           weight_tie_layers: Whether to weight tie layers (optional).
           fourier_encode_data: Whether to auto-fourier encode the data, using
               the input_axis given. defaults to True, but can be turned off
               if you are fourier encoding the data yourself.
+            sine_only: Use only sine encoding in fourier encoding, compared to using sine and cos
           self_per_cross_attn: Number of self attention blocks per cross attn.
           self_attn_rel_pos:
           sequential: If True, use the Perceiver like a recurrent neural
@@ -274,6 +89,7 @@ class Perceiver(nn.Module):
             if fourier_encode_data
             else 0
         )
+        self.sine_only = sine_only
         input_dim = fourier_channels + input_channels
 
         # Randomly initialise the 'latent array'.
@@ -358,13 +174,14 @@ class Perceiver(nn.Module):
               and height for images.
         """
         if self.sequential:
-            b, seq_length, *axis, _ = *data.shape
+            b, seq_length, *axis, _ = data.shape
             assert (
                 seq_length == self.depth
             ), 'The 2nd dim of `data` must be equal to the network `depth`.'
         else:
-            b, *axis, _ = *data.shape
+            b, *axis, _ = data.shape
         device = data.device
+
         assert (
             len(axis) == self.input_axis
         ), f"Input data must have {self.input_axis} axes, not {len(axis)}!"
@@ -372,18 +189,12 @@ class Perceiver(nn.Module):
         if self.fourier_encode_data:
             # Calculate Fourier encoded positions in the range of [-1, 1],
             # for all axes.
-            axis_pos = list(
-                map(
-                    lambda size:
-                    torch.linspace(
-                        -1.0, 1.0, steps=size, device=device
-                    ),
-                    axis))
-            pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
-            enc_pos = fourier_encode(
-                pos, self.max_freq, self.num_freq_bands, base=self.freq_base)
-            enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
-            enc_pos = repeat(enc_pos, "... -> b ...", b=b)
+            enc_pos = encode_position(b,
+                                      axis,
+                                      self.max_freq,
+                                      self.num_freq_bands,
+                                      self.freq_base,
+                                      sine_only=self.sine_only).type_as(data)
 
             data = torch.cat((data, enc_pos), dim=-1)
 

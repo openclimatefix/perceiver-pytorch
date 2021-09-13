@@ -4,15 +4,9 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 
-from perceiver_pytorch.perceiver_pytorch import (
-    exists,
-    default,
-    cache_fn,
-    fourier_encode,
-    PreNorm,
-    FeedForward,
-    Attention,
-)
+from perceiver_pytorch.layers import exists, default, cache_fn, PreNorm, FeedForward, Attention
+from perceiver_pytorch.utils import fourier_encode
+
 
 # latent mixer
 

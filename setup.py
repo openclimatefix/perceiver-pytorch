@@ -1,21 +1,29 @@
 from setuptools import setup, find_packages
+from pathlib import Path
+this_directory = Path(__file__).parent
+install_requires = (this_directory / 'requirements.txt').read_text().splitlines()
+long_description = (this_directory / "README.md").read_text()
+
 
 setup(
-    name="perceiver-pytorch",
+    name="perceiver-model",
     packages=find_packages(),
-    version="0.4.0",
+    version="0.7.1",
     license="MIT",
-    description="Perceiver - Pytorch",
-    author="Phil Wang",
-    author_email="lucidrains@gmail.com",
-    url="https://github.com/lucidrains/perceiver-pytorch",
+    description="Multimodal Perceiver - Pytorch",
+    author="Jacob Bieker, Jack Kelly, Peter Dudfield",
+    author_email="jacob@openclimatefix.org",
+    company="Open Climate Fix Ltd",
+    url="https://github.com/openclimatefix/perceiver-pytorch",
     keywords=[
         "artificial intelligence",
         "deep learning",
         "transformer",
         "attention mechanism",
     ],
-    install_requires=["einops>=0.3", "torch>=1.6"],
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    install_requires=install_requires,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
