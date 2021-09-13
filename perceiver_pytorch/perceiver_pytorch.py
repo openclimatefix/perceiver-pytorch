@@ -30,6 +30,7 @@ class Perceiver(nn.Module):
         ff_dropout=0.0,
         weight_tie_layers=False,
         fourier_encode_data=True,
+        sine_only: bool = False,
         self_per_cross_attn=1,
         self_attn_rel_pos=True
     ):
@@ -60,6 +61,7 @@ class Perceiver(nn.Module):
           fourier_encode_data: Whether to auto-fourier encode the data, using
               the input_axis given. defaults to True, but can be turned off
               if you are fourier encoding the data yourself.
+            sine_only: Use only sine encoding in fourier encoding, compared to using sine and cos
           self_per_cross_attn: Number of self attention blocks per cross attn.
         """
         super().__init__()
@@ -74,6 +76,7 @@ class Perceiver(nn.Module):
             if fourier_encode_data
             else 0
         )
+        self.sine_only = sine_only
         input_dim = fourier_channels + input_channels
 
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
