@@ -68,9 +68,9 @@ class FeedForward(nn.Module):
     def __init__(self, dim: int, mult: int = 4, dropout: float = 0.0):
         """
         Args:
-          dim: Input & Output size.
-          mult: The inner dimension of the FF net will be dim * mult.
-          dropout: Proportion to dropout after the GEGLU.
+            dim: Input & Output size.
+            mult: The inner dimension of the FF net will be dim * mult.
+            dropout: Proportion to dropout after the GEGLU.
         """
         super().__init__()
         self.net = nn.Sequential(
@@ -89,14 +89,15 @@ class Attention(nn.Module):
         self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0
     ):
         """
-
-        :param query_dim: Size of the queries.
-        :param context_dim: Size of the 'context' (the 'byte array' in the paper).
-        If None, will default to the query_dim.
-        :param heads: Number of attention heads.
-        :param dim_head:  Number of dimensions per head.
-        :param dropout: Proportion to dropout (in the final linear layer).
+        Args:
+            query_dim: Size of the queries.
+            context_dim: Size of the 'context' (the 'byte array' in the paper).
+            If None, will default to the query_dim.
+            heads: Number of attention heads.
+            dim_head: Number of dimensions per head.
+            dropout: Proportion to dropout (in the final linear layer).
         """
+
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
