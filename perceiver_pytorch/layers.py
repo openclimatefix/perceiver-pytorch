@@ -53,6 +53,10 @@ class PreNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
+    """
+    Gaussian Error Gated Linear Unit.
+    See Shazer 2020: https://arxiv.org/abs/2002.05202
+    """
     def forward(self, x):
         x, gates = x.chunk(2, dim=-1)
         return x * F.gelu(gates)
@@ -126,6 +130,9 @@ class Attention(nn.Module):
         context = default(context, x)
         k, v = self.to_kv(context).chunk(2, dim=-1)
 
+        # Rearrange the query, key and value tensors.
+        # b = batch size; n =
+        # h = number of heads; d = number of dims per head.
         q, k, v = map(
             lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
         )
