@@ -199,19 +199,8 @@ class Perceiver(nn.Module):
         pos_emb = self.sinu_emb(x) if exists(self.sinu_emb) else None
 
         # Layers.
-        output_per_timestep = []
-        for i, (cross_attn, cross_ff, self_attns) in enumerate(self.layers):
-            if self.sequential:
-                data_for_step = data[:, i]
-            else:
-                data_for_step = data
-            x = cross_attn(x, context=data_for_step, mask=mask) + x
-            x = cross_ff(x) + x
-
-            for self_attn, self_ff in self_attns:
-                x = self_attn(x, pos_emb=pos_emb) + x
-                x = self_ff(x) + x
-            output_per_timestep.append(x)
+        for cross_attn, cross_ff, self_attns in self.layers:
+            x = cross_attn(x, context=data, mask=mask) + x
 
         x = x.mean(dim=-2)
         return self.to_logits(x)
