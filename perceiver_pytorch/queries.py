@@ -27,4 +27,5 @@ class LearnableQuery(torch.nn.Module):
             (x.shape[0], self.query_future_size, self.query_dim)
         ).type_as(x)
         queries = self.learnable_query(z)
+        # TODO: Add Fourier Features
         return queries
