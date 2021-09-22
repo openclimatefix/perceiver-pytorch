@@ -1,9 +1,12 @@
 import torch
 from torch.distributions import uniform
 from typing import List, Union, Tuple
-from math import prod
 from perceiver_pytorch.utils import encode_position
 import einops
+import logging
+
+_LOG = logging.getLogger("perceiver.queries")
+_LOG.setLevel(logging.WARN)
 
 
 class LearnableQuery(torch.nn.Module):
@@ -39,14 +42,14 @@ class LearnableQuery(torch.nn.Module):
             num_frequency_bands=num_frequency_bands,
             sine_only=sine_only,
         )
-        print(self.fourier_features.shape)
+        _LOG.debug(self.fourier_features.shape)
         self.query_dim = query_dim
         if conv_layer == "3d":
             conv = torch.nn.Conv3d
         elif conv_layer == "2d":
             conv = torch.nn.Conv2d
         else:
-            raise ValueError(f"Value for 'layer' is {layer} which is not one of '3d', '2d'")
+            raise ValueError(f"Value for 'layer' is {conv_layer} which is not one of '3d', '2d'")
         self.conv_layer = conv_layer
         self.layer = conv(in_channels=query_dim, out_channels=query_dim, kernel_size=3, padding=1)
         # Linear layer to compress channels down to query_dim size?
@@ -54,28 +57,31 @@ class LearnableQuery(torch.nn.Module):
         self.distribution = uniform.Uniform(low=torch.Tensor([0.0]), high=torch.Tensor([1.0]))
 
     def forward(self, x: torch.Tensor):
-        print(f"Batch: {x.shape[0]} Query: {self.query_shape} Dim: {self.query_dim}")
+        _LOG.debug(f"Batch: {x.shape[0]} Query: {self.query_shape} Dim: {self.query_dim}")
         z = self.distribution.sample((x.shape[0], self.query_dim, *self.query_shape)).type_as(
             x
         )  # [B, Query, T, H, W, 1] or [B, Query, H, W, 1]
         z = torch.squeeze(z, dim=-1)  # Extra 1 for some reason
-        print(f"Z: {z.shape}")
+        _LOG.debug(f"Z: {z.shape}")
         # Do 3D or 2D CNN to keep same spatial size, concat, then linearize
         if self.conv_layer == "2d":
             # Iterate through time dimension
             outs = []
             for i in range(x.shape[1]):
-                outs.append(self.layer(z[:, i, :, :, :]))
-            query = torch.stack(outs, dim=1)
+                outs.append(self.layer(z[:, :, i, :, :]))
+            query = torch.stack(outs, dim=2)
         else:
             query = self.layer(z)
         # Add Fourier Features
         ff = einops.repeat(
             self.fourier_features, "b ... -> (repeat b) ...", repeat=x.shape[0]
         )  # Match batches
-        print(ff.shape)
+        # Move channels to correct location
+        query = einops.rearrange(query, "b c ... -> b ... c")
+        _LOG.debug(f"Fourier: {ff.shape}")
+        _LOG.debug(f"Query: {query.shape}")
         query = torch.cat([query, ff], dim=-1)
-        print(query.shape)
+        _LOG.debug(query.shape)
         # concat to channels of data and flatten axis
         query = einops.rearrange(query, "b ... d -> b (...) d")
         # Need query to end with query_dim channels
