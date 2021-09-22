@@ -9,14 +9,14 @@ import einops
 def test_learnable_query(layer_shape):
     query_creator = LearnableQuery(
         channel_dim=32,
-        query_shape=(24, 128, 128),
+        query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
         frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
     )
-    x = torch.randn((16, 24, 12, 128, 128))
+    x = torch.randn((16, 6, 12, 16, 16))
     out = query_creator(x)
     assert out.shape == (16, 393216, 803)
 
