@@ -18,7 +18,8 @@ def test_learnable_query(layer_shape):
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x)
-    assert out.shape == (4, 1536, 803)
+    # Output is flattened, so should be [B, T*H*W, C]
+    assert out.shape == (4, 16 * 16 * 6, 803)
 
 
 @pytest.mark.parametrize("layer_shape", ["2d", "3d"])

@@ -36,14 +36,13 @@ class LearnableQuery(torch.nn.Module):
         self.query_shape = query_shape
         # Need to get Fourier Features once and then just append to the output
         self.fourier_features = encode_position(
-            1,
+            1,  # Batch size, 1 for this as it will be adapted in forward
             axis=query_shape,
             max_frequency=max_frequency,
             frequency_base=frequency_base,
             num_frequency_bands=num_frequency_bands,
             sine_only=sine_only,
         )
-        _LOG.debug(self.fourier_features.shape)
         self.channel_dim = channel_dim
         if conv_layer == "3d":
             conv = torch.nn.Conv3d
@@ -104,11 +103,8 @@ class LearnableQuery(torch.nn.Module):
         )  # Match batches
         # Move channels to correct location
         query = einops.rearrange(query, "b c ... -> b ... c")
-        _LOG.debug(f"Fourier: {ff.shape}")
-        _LOG.debug(f"Query: {query.shape}")
         query = torch.cat([query, ff], dim=-1)
-        _LOG.debug(query.shape)
         # concat to channels of data and flatten axis
         query = einops.rearrange(query, "b ... d -> b (...) d")
-
+        _LOG.debug(f"Final Query Shape: {query.shape}")
         return query
