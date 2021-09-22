@@ -6,7 +6,7 @@ from perceiver_pytorch.queries import LearnableQuery
 @pytest.mark.parametrize("layer_shape", ["2d", "3d"])
 def test_learnable_query(layer_shape):
     query_creator = LearnableQuery(
-        query_dim=32,
+        channel_dim=32,
         query_shape=(24, 128, 128),
         conv_layer=layer_shape,
         max_frequency=64.0,

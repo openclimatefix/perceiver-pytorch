@@ -2,6 +2,7 @@ import torch
 from torch.distributions import uniform
 from typing import List, Union, Tuple
 from perceiver_pytorch.utils import encode_position
+from math import prod
 import einops
 import logging
 
@@ -16,7 +17,7 @@ class LearnableQuery(torch.nn.Module):
 
     def __init__(
         self,
-        query_dim: int,
+        channel_dim: int,
         query_shape: Union[Tuple[int], List[int]],
         conv_layer: str = "3d",
         max_frequency: float = 16.0,
@@ -28,10 +29,10 @@ class LearnableQuery(torch.nn.Module):
         Learnable Query with some inbuilt randomness to help with ensembling
 
         Args:
-            query_dim: Query dimension
+            channel_dim: Channel dimension for the output of the network
             query_shape: The final shape of the query, generally, the (T, H, W) of the output
         """
-        super().__init__()
+        super(LearnableQuery, self).__init__()
         self.query_shape = query_shape
         # Need to get Fourier Features once and then just append to the output
         self.fourier_features = encode_position(
@@ -43,7 +44,7 @@ class LearnableQuery(torch.nn.Module):
             sine_only=sine_only,
         )
         _LOG.debug(self.fourier_features.shape)
-        self.query_dim = query_dim
+        self.channel_dim = channel_dim
         if conv_layer == "3d":
             conv = torch.nn.Conv3d
         elif conv_layer == "2d":
@@ -51,14 +52,39 @@ class LearnableQuery(torch.nn.Module):
         else:
             raise ValueError(f"Value for 'layer' is {conv_layer} which is not one of '3d', '2d'")
         self.conv_layer = conv_layer
-        self.layer = conv(in_channels=query_dim, out_channels=query_dim, kernel_size=3, padding=1)
+        self.layer = conv(
+            in_channels=channel_dim, out_channels=channel_dim, kernel_size=3, padding=1
+        )
         # Linear layer to compress channels down to query_dim size?
-        self.fc = torch.nn.Linear(self.query_dim, self.query_dim)
+        self.fc = torch.nn.Linear(self.channel_dim, self.channel_dim)
         self.distribution = uniform.Uniform(low=torch.Tensor([0.0]), high=torch.Tensor([1.0]))
 
-    def forward(self, x: torch.Tensor):
-        _LOG.debug(f"Batch: {x.shape[0]} Query: {self.query_shape} Dim: {self.query_dim}")
-        z = self.distribution.sample((x.shape[0], self.query_dim, *self.query_shape)).type_as(
+    def output_shape(self) -> Tuple[int, int]:
+        """
+        Gives the output shape from the query, useful for setting the correct
+        query_dim in the Perceiver
+
+        Returns:
+            The shape of the resulting query, excluding the batch size
+        """
+
+        # The shape is the query_dim + Fourier Feature channels
+        channels = self.fourier_features.shape[-1] + self.channel_dim
+        return prod(self.query_shape), channels
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Samples the uniform distribution and creates the query by passing the
+        sample through the model and appending Fourier features
+
+        Args:
+            x: The input tensor to the model, used to batch the batch size
+
+        Returns:
+            Torch tensor used to query the output of the PerceiverIO model
+        """
+        _LOG.debug(f"Batch: {x.shape[0]} Query: {self.query_shape} Dim: {self.channel_dim}")
+        z = self.distribution.sample((x.shape[0], self.channel_dim, *self.query_shape)).type_as(
             x
         )  # [B, Query, T, H, W, 1] or [B, Query, H, W, 1]
         z = torch.squeeze(z, dim=-1)  # Extra 1 for some reason
@@ -84,6 +110,5 @@ class LearnableQuery(torch.nn.Module):
         _LOG.debug(query.shape)
         # concat to channels of data and flatten axis
         query = einops.rearrange(query, "b ... d -> b (...) d")
-        # Need query to end with query_dim channels
 
         return query
