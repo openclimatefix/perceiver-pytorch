@@ -23,7 +23,7 @@ def test_learnable_query(layer_shape):
 
 @pytest.mark.parametrize("layer_shape", ["2d", "3d"])
 def test_learnable_query_qpplication(layer_shape):
-    output_shape = (24, 128, 128)
+    output_shape = (24, 32, 32)
     query_creator = LearnableQuery(
         channel_dim=32,
         query_shape=output_shape,
@@ -35,7 +35,7 @@ def test_learnable_query_qpplication(layer_shape):
     )
     with torch.no_grad():
         query_creator.eval()
-        x = torch.randn((4, 24, 12, 128, 128))
+        x = torch.randn((4, 24, 12, 32, 32))
         out = query_creator(x)
 
         model = PerceiverIO(depth=6, dim=100, queries_dim=query_creator.output_shape()[-1])
@@ -50,4 +50,4 @@ def test_learnable_query_qpplication(layer_shape):
             h=output_shape[1],
             w=output_shape[2],
         )
-        assert model_out.shape == (4, 24, 803, 128, 128)
+        assert model_out.shape == (4, 24, 803, 32, 32)
