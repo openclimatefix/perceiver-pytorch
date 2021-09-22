@@ -19,6 +19,8 @@ def test_learnable_query(layer_shape):
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x)
     # Output is flattened, so should be [B, T*H*W, C]
+    # Channels is from channel_dim + 3*(num_frequency_bands * 2 + 1)
+    # 32 + 3*(257) = 771 + 32 = 803
     assert out.shape == (4, 16 * 16 * 6, 803)
 
 
