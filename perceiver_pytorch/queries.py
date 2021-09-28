@@ -44,7 +44,9 @@ class LearnableQuery(torch.nn.Module):
             sine_only=sine_only,
         )
         self.channel_dim = channel_dim
-        if conv_layer == "3d":
+        if (
+            conv_layer == "3d" and len(self.query_shape) == 3
+        ):  # If Query shape is for an image, then 3D conv won't work
             conv = torch.nn.Conv3d
         elif conv_layer == "2d":
             conv = torch.nn.Conv2d
@@ -89,7 +91,7 @@ class LearnableQuery(torch.nn.Module):
         z = torch.squeeze(z, dim=-1)  # Extra 1 for some reason
         _LOG.debug(f"Z: {z.shape}")
         # Do 3D or 2D CNN to keep same spatial size, concat, then linearize
-        if self.conv_layer == "2d":
+        if self.conv_layer == "2d" and len(self.query_shape) == 3:
             # Iterate through time dimension
             outs = []
             for i in range(x.shape[1]):
