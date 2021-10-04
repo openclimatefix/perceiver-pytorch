@@ -2,6 +2,7 @@ import pytest
 import torch
 from perceiver_pytorch.queries import LearnableQuery
 from perceiver_pytorch.perceiver_io import PerceiverIO
+from perceiver_pytorch.utils import encode_position
 import einops
 
 
@@ -54,3 +55,66 @@ def test_learnable_query_qpplication(layer_shape):
             w=output_shape[2],
         )
         assert model_out.shape == (2, 6, 227, 16, 16)
+
+
+@pytest.mark.parametrize("layer_shape", ["2d", "3d"])
+def test_learnable_query_precomputed_fourier_only(layer_shape):
+    precomputed_features = encode_position(
+        1,  # Batch size, 1 for this as it will be adapted in forward
+        axis=(10, 16, 16),  # 4 history + 6 future steps
+        max_frequency=16.0,
+        frequency_base=2.0,
+        num_frequency_bands=128,
+        sine_only=False,
+    )
+    # Only take future ones
+    precomputed_features = precomputed_features[:, 4:]
+    query_creator = LearnableQuery(
+        channel_dim=32,
+        query_shape=(6, 16, 16),
+        conv_layer=layer_shape,
+        max_frequency=64.0,
+        frequency_base=2.0,
+        num_frequency_bands=16,
+        sine_only=False,
+        precomputed_fourier=precomputed_features,
+        use_both_precomputed_and_generated_fourier=False,
+    )
+    x = torch.randn((4, 6, 12, 16, 16))
+    out = query_creator(x)
+    # Output is flattened, so should be [B, T*H*W, C]
+    # Channels is from channel_dim + 3*(num_frequency_bands * 2 + 1)
+    # 32 + 3*(257) = 771 + 32 = 803
+    assert out.shape == (4, 16 * 16 * 6, 803)
+
+
+@pytest.mark.parametrize("layer_shape", ["2d", "3d"])
+def test_learnable_query_precomputed_and_generated_fourer(layer_shape):
+    precomputed_features = encode_position(
+        1,  # Batch size, 1 for this as it will be adapted in forward
+        axis=(10, 16, 16),  # 4 history + 6 future steps
+        max_frequency=16.0,
+        frequency_base=2.0,
+        num_frequency_bands=128,
+        sine_only=False,
+    )
+    # Only take future ones
+    precomputed_features = precomputed_features[:, 4:]
+    query_creator = LearnableQuery(
+        channel_dim=32,
+        query_shape=(6, 16, 16),
+        conv_layer=layer_shape,
+        max_frequency=64.0,
+        frequency_base=2.0,
+        num_frequency_bands=128,
+        sine_only=False,
+        precomputed_fourier=precomputed_features,
+        use_both_precomputed_and_generated_fourier=True,
+    )
+    x = torch.randn((4, 6, 12, 16, 16))
+    out = query_creator(x)
+    # Output is flattened, so should be [B, T*H*W, C]
+    # Channels is from channel_dim + 3*(num_frequency_bands * 2 + 1)
+    # 32 + 3*(257) = 771 + 32 = 803
+    # Then add 771 from the precomputed features, to get 803 + 771
+    assert out.shape == (4, 16 * 16 * 6, 803 + 771)
