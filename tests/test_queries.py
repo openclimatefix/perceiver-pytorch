@@ -140,7 +140,6 @@ def test_learnable_query_pass_in_fourier(layer_shape):
         frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
-        precomputed_fourier=precomputed_features,
         use_both_precomputed_and_generated_fourier=False,
     )
     x = torch.randn((4, 6, 12, 16, 16))
@@ -150,3 +149,45 @@ def test_learnable_query_pass_in_fourier(layer_shape):
     # 3*(129) = 389 + 32 = 419
     # Since this is less than what is passed to LearnableQuery, we know its using the passed in features
     assert out.shape == (4, 16 * 16 * 6, 419)
+
+
+@pytest.mark.parametrize("layer_shape", ["2d", "3d"])
+def test_learnable_query_all_fouriers(layer_shape):
+    batch_ff = encode_position(
+        4,
+        axis=(10, 16, 16),  # 4 history + 6 future steps
+        max_frequency=16.0,
+        frequency_base=2.0,
+        num_frequency_bands=32,
+        sine_only=False,
+    )
+    # Only take future ones
+    batch_ff = batch_ff[:, 4:]
+    precomputed_features = encode_position(
+        1,
+        axis=(10, 16, 16),  # 4 history + 6 future steps
+        max_frequency=16.0,
+        frequency_base=2.0,
+        num_frequency_bands=64,
+        sine_only=False,
+    )
+    # Only take future ones
+    precomputed_features = precomputed_features[:, 4:]
+    query_creator = LearnableQuery(
+        channel_dim=32,
+        query_shape=(6, 16, 16),
+        conv_layer=layer_shape,
+        max_frequency=64.0,
+        frequency_base=2.0,
+        num_frequency_bands=128,
+        sine_only=False,
+        precomputed_fourier=precomputed_features,
+        use_both_precomputed_and_generated_fourier=True,
+    )
+    x = torch.randn((4, 6, 12, 16, 16))
+    out = query_creator(x, batch_ff)
+    # Output is flattened, so should be [B, T*H*W, C]
+    # Channels is from channel_dim + 3*(num_frequency_bands * 2 + 1)
+    # 3*(129) = 389 + 32 = 419 + 771 from the generated ones + 195 from the batch features
+    # Since this is less than what is passed to LearnableQuery, we know its using the passed in features
+    assert out.shape == (4, 16 * 16 * 6, 1385)
