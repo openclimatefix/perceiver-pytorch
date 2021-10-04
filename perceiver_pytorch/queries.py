@@ -142,6 +142,8 @@ class LearnableQuery(torch.nn.Module):
                 to_concat = to_concat + [ff, fourier_features]
             else:
                 to_concat = to_concat + [fourier_features]
+        else:
+            to_concat = to_concat + [ff]
         query = torch.cat(to_concat, dim=-1)
         # concat to channels of data and flatten axis
         query = einops.rearrange(query, "b ... d -> b (...) d")
