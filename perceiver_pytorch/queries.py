@@ -25,7 +25,7 @@ class LearnableQuery(torch.nn.Module):
         frequency_base: float = 2.0,
         sine_only: bool = False,
         precomputed_fourier: Optional[torch.Tensor] = None,
-        use_both_precomputed_and_generated_fourier: bool = False,
+        generate_fourier_features: bool = False,
     ):
         """
         Learnable Query with some inbuilt randomness to help with ensembling
@@ -42,29 +42,18 @@ class LearnableQuery(torch.nn.Module):
                 useful for having temporally consistent features from history timesteps to future predictions
                 These features will be concatenated directly to the query, so should be compatible, and made in the
                 same way as in encode_position
-            use_both_precomputed_and_generated_fourier: Whether to use both the generated Fourier features giving the relative
-            position within the predictions and the precomputed Fourier features passed in or not. If False, the default,
-            then only the precomputed Fourier features will be used, if not None.
+            generate_fourier_features: Whether to use generated Fourier features giving the relative
+            position within the predictions.
         """
         super().__init__()
         self.query_shape = query_shape
-        self.use_both_precomputed_and_generated_fourier = use_both_precomputed_and_generated_fourier
+        self.generate_fourier_features = generate_fourier_features
         # Need to get Fourier Features once and then just append to the output
+        fourier_features = []
         if precomputed_fourier is not None:
-            if self.use_both_precomputed_and_generated_fourier:
-                generated_features = encode_position(
-                    1,  # Batch size, 1 for this as it will be adapted in forward
-                    axis=query_shape,
-                    max_frequency=max_frequency,
-                    frequency_base=frequency_base,
-                    num_frequency_bands=num_frequency_bands,
-                    sine_only=sine_only,
-                )
-                self.fourier_features = torch.cat([generated_features, precomputed_fourier], dim=-1)
-            else:
-                self.fourier_features = precomputed_fourier
-        else:
-            self.fourier_features = encode_position(
+            fourier_features += [precomputed_fourier]
+        if self.generate_fourier_features:
+            generated_features = encode_position(
                 1,  # Batch size, 1 for this as it will be adapted in forward
                 axis=query_shape,
                 max_frequency=max_frequency,
@@ -72,6 +61,16 @@ class LearnableQuery(torch.nn.Module):
                 num_frequency_bands=num_frequency_bands,
                 sine_only=sine_only,
             )
+            fourier_features += [generated_features]
+        if len(fourier_features) > 1:
+            self.fourier_features = torch.cat(fourier_features, dim=-1)
+        elif fourier_features:
+            # Only have one of the two options
+            self.fourier_features = fourier_features[0]
+        else:
+            # None are set
+            self.fourier_features = None
+
         self.channel_dim = channel_dim
         if (
             conv_layer == "3d" and len(self.query_shape) == 3
@@ -99,7 +98,10 @@ class LearnableQuery(torch.nn.Module):
         """
 
         # The shape is the query_dim + Fourier Feature channels
-        channels = self.fourier_features.shape[-1] + self.channel_dim
+        if self.fourier_features is not None:
+            channels = self.fourier_features.shape[-1] + self.channel_dim
+        else:
+            channels = self.channel_dim
         return prod(self.query_shape), channels
 
     def forward(
@@ -111,7 +113,8 @@ class LearnableQuery(torch.nn.Module):
 
         Args:
             x: The input tensor to the model, used to batch the batch size
-            fourier_features: Fourier features to append to the input
+            fourier_features: Fourier features to append to the input, if used, the output_shape will be incorrect,
+                and to get the correct output shape, the fourier_features channels have to be added to output_shape
 
         Returns:
             Torch tensor used to query the output of the PerceiverIO model
@@ -131,20 +134,18 @@ class LearnableQuery(torch.nn.Module):
             query = torch.stack(outs, dim=2)
         else:
             query = self.layer(z)
-        ff = einops.repeat(
-            self.fourier_features, "b ... -> (repeat b) ...", repeat=x.shape[0]
-        )  # Match batches
         # Move channels to correct location
         query = einops.rearrange(query, "b c ... -> b ... c")
         to_concat = [query]
-        if fourier_features is not None:
-            if self.use_both_precomputed_and_generated_fourier:
-                to_concat = to_concat + [ff, fourier_features]
-            else:
-                to_concat = to_concat + [fourier_features]
-        else:
+        if self.fourier_features is not None:
+            ff = einops.repeat(
+                self.fourier_features, "b ... -> (repeat b) ...", repeat=x.shape[0]
+            )  # Match batches
             to_concat = to_concat + [ff]
-        query = torch.cat(to_concat, dim=-1)
+        if fourier_features is not None:
+            to_concat = to_concat + [fourier_features]
+        if len(to_concat) > 1:
+            query = torch.cat(to_concat, dim=-1)
         # concat to channels of data and flatten axis
         query = einops.rearrange(query, "b ... d -> b (...) d")
         _LOG.debug(f"Final Query Shape: {query.shape}")

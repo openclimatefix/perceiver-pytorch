@@ -78,7 +78,7 @@ def test_learnable_query_precomputed_fourier_only(layer_shape):
         num_frequency_bands=16,
         sine_only=False,
         precomputed_fourier=precomputed_features,
-        use_both_precomputed_and_generated_fourier=False,
+        generate_fourier_features=False,
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x)
@@ -109,7 +109,7 @@ def test_learnable_query_precomputed_and_generated_fourer(layer_shape):
         num_frequency_bands=128,
         sine_only=False,
         precomputed_fourier=precomputed_features,
-        use_both_precomputed_and_generated_fourier=True,
+        generate_fourier_features=True,
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x)
@@ -140,7 +140,7 @@ def test_learnable_query_pass_in_fourier(layer_shape):
         frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
-        use_both_precomputed_and_generated_fourier=False,
+        generate_fourier_features=False,
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x, precomputed_features)
@@ -182,7 +182,7 @@ def test_learnable_query_all_fouriers(layer_shape):
         num_frequency_bands=128,
         sine_only=False,
         precomputed_fourier=precomputed_features,
-        use_both_precomputed_and_generated_fourier=True,
+        generate_fourier_features=True,
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x, batch_ff)
