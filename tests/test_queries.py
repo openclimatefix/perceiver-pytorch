@@ -32,7 +32,6 @@ def test_learnable_query_no_fourier(layer_shape):
         query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
         generate_fourier_features=False,
@@ -80,7 +79,6 @@ def test_learnable_query_precomputed_fourier_only(layer_shape):
         1,  # Batch size, 1 for this as it will be adapted in forward
         axis=(10, 16, 16),  # 4 history + 6 future steps
         max_frequency=16.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
     )
@@ -91,7 +89,6 @@ def test_learnable_query_precomputed_fourier_only(layer_shape):
         query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
-        frequency_base=2.0,
         num_frequency_bands=16,
         sine_only=False,
         precomputed_fourier=precomputed_features,
@@ -111,7 +108,6 @@ def test_learnable_query_precomputed_and_generated_fourer(layer_shape):
         1,  # Batch size, 1 for this as it will be adapted in forward
         axis=(10, 16, 16),  # 4 history + 6 future steps
         max_frequency=16.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
     )
@@ -122,7 +118,6 @@ def test_learnable_query_precomputed_and_generated_fourer(layer_shape):
         query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
         precomputed_fourier=precomputed_features,
@@ -143,7 +138,6 @@ def test_learnable_query_pass_in_fourier(layer_shape):
         4,
         axis=(10, 16, 16),  # 4 history + 6 future steps
         max_frequency=16.0,
-        frequency_base=2.0,
         num_frequency_bands=64,
         sine_only=False,
     )
@@ -154,7 +148,6 @@ def test_learnable_query_pass_in_fourier(layer_shape):
         query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
         generate_fourier_features=False,
@@ -174,7 +167,6 @@ def test_learnable_query_all_fouriers(layer_shape):
         4,
         axis=(10, 16, 16),  # 4 history + 6 future steps
         max_frequency=16.0,
-        frequency_base=2.0,
         num_frequency_bands=32,
         sine_only=False,
     )
@@ -184,7 +176,6 @@ def test_learnable_query_all_fouriers(layer_shape):
         1,
         axis=(10, 16, 16),  # 4 history + 6 future steps
         max_frequency=16.0,
-        frequency_base=2.0,
         num_frequency_bands=64,
         sine_only=False,
     )
@@ -195,7 +186,6 @@ def test_learnable_query_all_fouriers(layer_shape):
         query_shape=(6, 16, 16),
         conv_layer=layer_shape,
         max_frequency=64.0,
-        frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
         precomputed_fourier=precomputed_features,
