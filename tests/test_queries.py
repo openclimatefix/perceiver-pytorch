@@ -16,6 +16,7 @@ def test_learnable_query(layer_shape):
         frequency_base=2.0,
         num_frequency_bands=128,
         sine_only=False,
+        generate_fourier_features=True,
     )
     x = torch.randn((4, 6, 12, 16, 16))
     out = query_creator(x)
@@ -36,6 +37,7 @@ def test_learnable_query_qpplication(layer_shape):
         frequency_base=2.0,
         num_frequency_bands=32,
         sine_only=False,
+        generate_fourier_features=True,
     )
     with torch.no_grad():
         query_creator.eval()
