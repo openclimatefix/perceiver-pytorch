@@ -159,7 +159,7 @@ def fourier_encode(
 
     scales = torch.linspace(
         1.0,
-        log(max_freq / 2),
+        max_freq / 2,
         num_bands,
         device=device,
         dtype=dtype,
