@@ -33,9 +33,7 @@ def extract_image_patches(
     w2 = math.ceil(w / stride)
     pad_row = (h2 - 1) * stride + (kernel - 1) * dilation + 1 - h
     pad_col = (w2 - 1) * stride + (kernel - 1) * dilation + 1 - w
-    x = F.pad(
-        x, (pad_row // 2, pad_row - pad_row // 2, pad_col // 2, pad_col - pad_col // 2)
-    )
+    x = F.pad(x, (pad_row // 2, pad_row - pad_row // 2, pad_col // 2, pad_col - pad_col // 2))
 
     # Extract patches
     # get all image windows of size (kernel, stride) and stride (kernel, stride)
@@ -105,7 +103,6 @@ def encode_position(
     axis: list,
     max_frequency: float,
     num_frequency_bands: int,
-    frequency_base: float,
     sine_only: bool = False,
 ) -> torch.Tensor:
     """
@@ -116,7 +113,6 @@ def encode_position(
         axis: List containing the size of each axis
         max_frequency: Max frequency
         num_frequency_bands: Number of frequency bands to use
-        frequency_base: Base frequency
         sine_only: (bool) Whether to only use Sine features or both Sine and Cosine, defaults to both
 
     Returns:
@@ -133,7 +129,6 @@ def encode_position(
         pos,
         max_frequency,
         num_frequency_bands,
-        frequency_base,
         sine_only=sine_only,
     )
     enc_pos = einops.rearrange(enc_pos, "... n d -> ... (n d)")
@@ -145,7 +140,6 @@ def fourier_encode(
     x: torch.Tensor,
     max_freq: float,
     num_bands: int = 4,
-    base: float = 2,
     sine_only: bool = False,
 ) -> torch.Tensor:
     """
@@ -155,7 +149,6 @@ def fourier_encode(
         x: Input Torch Tensor
         max_freq: Maximum frequency for the Fourier features
         num_bands: Number of frequency bands
-        base: Base frequency
         sine_only: Whether to only use sine or both sine and cosine features
 
     Returns:
@@ -164,11 +157,10 @@ def fourier_encode(
     x = x.unsqueeze(-1)
     device, dtype, orig_x = x.device, x.dtype, x
 
-    scales = torch.logspace(
-        0.0,
-        log(max_freq / 2) / log(base),
+    scales = torch.linspace(
+        1.0,
+        log(max_freq / 2),
         num_bands,
-        base=base,
         device=device,
         dtype=dtype,
     )

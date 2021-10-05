@@ -42,9 +42,7 @@ class MultiPerceiver(torch.nn.Module):
         # we encode modality with one hot encoding, so need one dim per modality:
         modality_encoding_dim = len(modalities)
         # input_dim is the maximum dimension over all input modalities:
-        input_dim = (
-            max(modality.input_dim for modality in modalities) + modality_encoding_dim
-        )
+        input_dim = max(modality.input_dim for modality in modalities) + modality_encoding_dim
         # Pop dim
         self.max_modality_dim = input_dim
         kwargs.pop("dim", None)
@@ -58,16 +56,12 @@ class MultiPerceiver(torch.nn.Module):
     def decode_output(self, data):
         pass
 
-    def forward(
-        self, multi_modality_data: Dict[str, torch.Tensor], mask=None, queries=None
-    ):
+    def forward(self, multi_modality_data: Dict[str, torch.Tensor], mask=None, queries=None):
         batch_sizes = set()
         num_modalities = len(multi_modality_data)
         linearized_data = []
 
-        for modality_index, modality_name in enumerate(
-            sorted(multi_modality_data.keys())
-        ):
+        for modality_index, modality_name in enumerate(sorted(multi_modality_data.keys())):
             assert (
                 modality_name in self.modalities
             ), f"modality {modality_name} was not defined in constructor"
@@ -79,29 +73,22 @@ class MultiPerceiver(torch.nn.Module):
                 f"Expected {modality.input_axis} while forward argument offered {len(axis)}"
             )
             batch_sizes.add(b)
-            assert (
-                len(batch_sizes) == 1
-            ), "batch size must be the same across all modalities"
+            assert len(batch_sizes) == 1, "batch size must be the same across all modalities"
             enc_pos = []
             if self.fourier_encode_data:
                 # calculate fourier encoded positions in the range of [-1, 1], for all axis
-                enc_pos = encode_position(b,
-                                          axis,
-                                          modality.max_freq,
-                                          modality.num_freq_bands,
-                                          modality.freq_base,
-                                          sine_only=self.sine_only).type_as(data)
+                enc_pos = encode_position(
+                    b, axis, modality.max_freq, modality.num_freq_bands, sine_only=self.sine_only
+                ).type_as(data)
 
             # Figure out padding for this modality, given max dimension across all modalities:
             padding_size = self.max_modality_dim - modality.input_dim - num_modalities
 
-            padding = torch.zeros(size=data.size()[0:-1] + (padding_size,)).type_as(
+            padding = torch.zeros(size=data.size()[0:-1] + (padding_size,)).type_as(data)
+            # concat to channels of data and flatten axis
+            modality_encodings = modality_encoding(b, axis, modality_index, num_modalities).type_as(
                 data
             )
-            # concat to channels of data and flatten axis
-            modality_encodings = modality_encoding(
-                b, axis, modality_index, num_modalities
-            ).type_as(data)
             to_concat = (
                 (data, padding, enc_pos, modality_encodings)
                 if len(enc_pos) > 0

@@ -16,7 +16,6 @@ class Perceiver(nn.Module):
         num_freq_bands,
         depth,
         max_freq,
-        freq_base=2,
         input_channels=3,
         input_axis=2,
         num_latents=512,
@@ -44,8 +43,6 @@ class Perceiver(nn.Module):
           depth: Depth of net.
           max_freq: Maximum frequency, hyperparameter depending on how
               fine the data is.
-          freq_base: Base of the logarithm function for Fourier position
-              encoding.
           input_channels: Number of channels for each token of the input.
           input_axis: Number of axes for input data (2 for images, 3 for video)
           num_latents: Number of latents, or induced set points, or centroids.
@@ -70,7 +67,6 @@ class Perceiver(nn.Module):
         self.input_axis = input_axis
         self.max_freq = max_freq
         self.num_freq_bands = num_freq_bands
-        self.freq_base = freq_base
 
         self.fourier_encode_data = fourier_encode_data
         fourier_channels = (input_axis * ((num_freq_bands * 2) + 1)) if fourier_encode_data else 0
@@ -171,7 +167,6 @@ class Perceiver(nn.Module):
                 axis,
                 self.max_freq,
                 self.num_freq_bands,
-                self.freq_base,
                 sine_only=self.sine_only,
             ).type_as(data)
 
