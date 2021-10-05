@@ -9,7 +9,6 @@ class InputModality:
     input_axis: int
     num_freq_bands: int
     max_freq: float
-    freq_base: int = 2
     sin_only: bool = False
     fourier_encode: bool = True
 
