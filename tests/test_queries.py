@@ -27,6 +27,23 @@ def test_learnable_query(layer_shape):
 
 
 @pytest.mark.parametrize("layer_shape", ["2d", "3d"])
+def test_learnable_query_no_fourier(layer_shape):
+    query_creator = LearnableQuery(
+        channel_dim=32,
+        query_shape=(6, 16, 16),
+        conv_layer=layer_shape,
+        max_frequency=64.0,
+        frequency_base=2.0,
+        num_frequency_bands=128,
+        sine_only=False,
+        generate_fourier_features=False,
+    )
+    x = torch.randn((4, 6, 12, 16, 16))
+    out = query_creator(x)
+    assert out.shape == (4, 16 * 16 * 6, 32)
+
+
+@pytest.mark.parametrize("layer_shape", ["2d", "3d"])
 def test_learnable_query_qpplication(layer_shape):
     output_shape = (6, 16, 16)
     query_creator = LearnableQuery(
