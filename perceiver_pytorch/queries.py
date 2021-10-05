@@ -57,7 +57,6 @@ class LearnableQuery(torch.nn.Module):
                 1,  # Batch size, 1 for this as it will be adapted in forward
                 axis=query_shape,
                 max_frequency=max_frequency,
-                frequency_base=frequency_base,
                 num_frequency_bands=num_frequency_bands,
                 sine_only=sine_only,
             )
