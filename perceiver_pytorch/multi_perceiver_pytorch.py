@@ -78,7 +78,11 @@ class MultiPerceiver(torch.nn.Module):
             if self.fourier_encode_data:
                 # calculate fourier encoded positions in the range of [-1, 1], for all axis
                 enc_pos = encode_position(
-                    b, axis, modality.max_freq, modality.num_freq_bands, sine_only=self.sine_only
+                    batch_size=b,
+                    axis=axis,
+                    max_frequency=modality.max_freq,
+                    num_frequency_bands=modality.num_freq_bands,
+                    sine_only=self.sine_only,
                 ).type_as(data)
 
             # Figure out padding for this modality, given max dimension across all modalities:

@@ -105,9 +105,9 @@ class Perceiver(nn.Module):
         )
         pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
         enc_pos = fourier_encode(
-            pos,
-            self.max_freq,
-            self.num_freq_bands,
+            x=pos,
+            max_freq=self.max_freq,
+            num_bands=self.num_freq_bands,
         )
         enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
         enc_pos = repeat(enc_pos, "... -> b ...", b=b)
