@@ -106,22 +106,7 @@ class MultiPerceiver(torch.nn.Module):
         # Concatenate all the modalities:
         data = torch.cat(linearized_data, dim=1)
 
-        # After this is the PerceiverIO backbone, still would need to decode it back to an image though
-        # Should include the query shape here for the output we want, could be learned embeddings, repeated input frames of the same shape that is desired, etc.
         perceiver_output = self.perceiver.forward(data, mask, queries)
 
-        # For multiple modalities, they are split after this back into different tensors
-        # For Sat images, we just want the images, not the other ones, so can leave it as is?
-
-        # Have to decode back into future Sat image frames
-        # Perceiver for 'pixel' postprocessing does nothing, or undoes the space2depth from before if just image
-        # If doing depth2space, should split modalities again
-
-        # Reshape to the correct output
-        # This is how it is done in the official implementation, do a decoder query with cross attention, then just reshape the output
-        # For timeseries, this is given as a query with T*H*W shape
-        # For Flow Decoder, this is the same, except has a rescale factor
-
         # To keep this more general, leave the reshaping to postprocessing outside the model
-
         return perceiver_output

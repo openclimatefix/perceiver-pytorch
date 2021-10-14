@@ -22,7 +22,6 @@ class LearnableQuery(torch.nn.Module):
         conv_layer: str = "3d",
         max_frequency: float = 16.0,
         num_frequency_bands: int = 64,
-        frequency_base: float = 2.0,
         sine_only: bool = False,
         precomputed_fourier: Optional[torch.Tensor] = None,
         generate_fourier_features: bool = False,
@@ -36,7 +35,6 @@ class LearnableQuery(torch.nn.Module):
             conv_layer: The type of convolutional layer to use, either 3d or 2d
             max_frequency: Max frequency for the Fourier Features
             num_frequency_bands: Number of frequency bands for the Fourier Features
-            frequency_base: Base frequency for the Fourier Features
             sine_only: Whether to use only the sine Fourier features
             precomputed_fourier: Fourier features to use instead of computing them here,
                 useful for having temporally consistent features from history timesteps to future predictions
