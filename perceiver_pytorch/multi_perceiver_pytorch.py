@@ -109,6 +109,8 @@ class MultiPerceiver(torch.nn.Module):
         data = torch.cat(linearized_data, dim=1)
         print(type(data))
         print(data.shape)
+        print(queries.shape)
+        print(mask)
         perceiver_output = self.perceiver.forward(data, mask, queries)
 
         # To keep this more general, leave the reshaping to postprocessing outside the model
