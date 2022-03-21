@@ -1,12 +1,10 @@
 import torch
-from torch import nn, einsum
 import torch.nn.functional as F
-
 from einops import rearrange, repeat
+from torch import einsum, nn
 
-from perceiver_pytorch.layers import exists, default, cache_fn, PreNorm, FeedForward, Attention
+from perceiver_pytorch.layers import Attention, FeedForward, PreNorm, cache_fn, default, exists
 from perceiver_pytorch.utils import fourier_encode
-
 
 # helpers
 
@@ -31,9 +29,7 @@ class GRUGating(nn.Module):
         b, dim = x.shape[0], self.dim
         y = self.fn(x, **kwargs)
 
-        gated_output = self.gru(
-            rearrange(y, "... d -> (...) d"), rearrange(x, "... d -> (...) d")
-        )
+        gated_output = self.gru(rearrange(y, "... d -> (...) d"), rearrange(x, "... d -> (...) d"))
 
         gated_output = rearrange(gated_output, "(b n) d -> b n d", b=b)
         return gated_output
@@ -127,30 +123,22 @@ class Perceiver(nn.Module):
                 )
             )
 
-        self.to_logits = nn.Sequential(
-            nn.LayerNorm(latent_dim), nn.Linear(latent_dim, num_classes)
-        )
+        self.to_logits = nn.Sequential(nn.LayerNorm(latent_dim), nn.Linear(latent_dim, num_classes))
 
     def forward(self, data, mask=None):
         b, *axis, _, device = *data.shape, data.device
-        assert (
-            len(axis) == self.input_axis
-        ), "input data must have the right number of axis"
+        assert len(axis) == self.input_axis, "input data must have the right number of axis"
 
         # calculate fourier encoded positions in the range of [-1, 1], for all axis
 
         axis_pos = list(
             map(
-                lambda size: torch.linspace(
-                    -1.0, 1.0, steps=size, device=device
-                ),
+                lambda size: torch.linspace(-1.0, 1.0, steps=size, device=device),
                 axis,
             )
         )
         pos = torch.stack(torch.meshgrid(*axis_pos), dim=-1)
-        enc_pos = fourier_encode(
-            pos, self.max_freq, self.num_freq_bands, base=self.freq_base
-        )
+        enc_pos = fourier_encode(pos, self.max_freq, self.num_freq_bands, base=self.freq_base)
         enc_pos = rearrange(enc_pos, "... n d -> ... (n d)")
         enc_pos = repeat(enc_pos, "... -> b ...", b=b)
 

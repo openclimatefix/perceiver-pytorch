@@ -1,8 +1,9 @@
 import torch
 from einops import rearrange
-from perceiver_pytorch.multi_perceiver_pytorch import MultiPerceiver
-from perceiver_pytorch.modalities import InputModality
+
 from perceiver_pytorch.decoders import ImageDecoder
+from perceiver_pytorch.modalities import InputModality
+from perceiver_pytorch.multi_perceiver_pytorch import MultiPerceiver
 
 
 def test_multiperceiver_creation():
@@ -54,9 +55,7 @@ def test_multiperceiver_creation():
     model.eval()
     with torch.no_grad():
         out = model(x, queries=query)
-        out = rearrange(
-            out, "b h (w c) -> b c h w", c=12
-        )
+        out = rearrange(out, "b h (w c) -> b c h w", c=12)
     # MetNet creates predictions for the center 1/4th
     assert out.size() == (
         2,
@@ -105,7 +104,7 @@ def test_multiperceiver_decoder():
         queries_dim=input_size,
         depth=6,
         forecast_steps=12,
-        output_shape=(24,input_size,input_size),
+        output_shape=(24, input_size, input_size),
     )
 
     x = {
@@ -115,13 +114,17 @@ def test_multiperceiver_decoder():
     }
     query = torch.randn((2, input_size * 12, input_size))
     model.eval()
-    decoder = ImageDecoder(postprocess_type='conv1x1', input_channels=768, output_channels=12, spatial_upsample=1, temporal_upsample=1)
+    decoder = ImageDecoder(
+        postprocess_type="conv1x1",
+        input_channels=768,
+        output_channels=12,
+        spatial_upsample=1,
+        temporal_upsample=1,
+    )
     decoder.eval()
     with torch.no_grad():
         out = model(x, queries=query)
-        out = rearrange(
-            out, "b c (t w h) -> b t c h w", t=24, h=input_size, w=input_size
-        )
+        out = rearrange(out, "b c (t w h) -> b t c h w", t=24, h=input_size, w=input_size)
         out = decoder(out)
     # MetNet creates predictions for the center 1/4th
     assert out.size() == (
@@ -132,6 +135,3 @@ def test_multiperceiver_decoder():
         input_size,
     )
     assert not torch.isnan(out).any(), "Output included NaNs"
-
-
-

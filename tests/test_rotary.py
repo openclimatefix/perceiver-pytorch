@@ -1,9 +1,6 @@
-from perceiver_pytorch.rotary import (
-    rotate_every_two,
-    apply_rotary_emb,
-    SinusoidalEmbeddings,
-)
 import torch
+
+from perceiver_pytorch.rotary import SinusoidalEmbeddings, apply_rotary_emb, rotate_every_two
 
 
 def test_rotate_every_two():

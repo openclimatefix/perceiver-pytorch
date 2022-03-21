@@ -1,7 +1,7 @@
+import pytest
 import torch
 
 from perceiver_pytorch.decoders import ImageDecoder
-import pytest
 
 
 def test_conv_image_decoder():

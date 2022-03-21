@@ -1,12 +1,10 @@
 import torch
-from torch import nn, einsum
 import torch.nn.functional as F
-
 from einops import rearrange, repeat
+from torch import einsum, nn
 
-from perceiver_pytorch.layers import exists, default, cache_fn, PreNorm, FeedForward, Attention
+from perceiver_pytorch.layers import Attention, FeedForward, PreNorm, cache_fn, default, exists
 from perceiver_pytorch.utils import fourier_encode
-
 
 # latent mixer
 
