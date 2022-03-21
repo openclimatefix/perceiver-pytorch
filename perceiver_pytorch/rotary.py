@@ -1,6 +1,6 @@
 import torch
-from torch import nn, einsum
 from einops import rearrange, repeat
+from torch import einsum, nn
 
 
 class SinusoidalEmbeddings(nn.Module):

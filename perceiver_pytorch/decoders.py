@@ -1,7 +1,8 @@
-import torch
 import numpy as np
-from perceiver_pytorch.utils import reverse_space_to_depth
+import torch
+
 from perceiver_pytorch.convolutions import Conv2DUpsample, Conv3DUpsample
+from perceiver_pytorch.utils import reverse_space_to_depth
 
 
 class ImageDecoder(torch.nn.Module):
@@ -180,7 +181,9 @@ class ImageDecoderConv1x1(torch.nn.Module):
 
 class ImageDecoderPatches(torch.nn.Module):
     def __init__(
-        self, spatial_upsample: int = 1, temporal_upsample: int = 1,
+        self,
+        spatial_upsample: int = 1,
+        temporal_upsample: int = 1,
     ):
         """
         Patch-based image decoder
@@ -196,7 +199,5 @@ class ImageDecoderPatches(torch.nn.Module):
         self.spatial_upsample = spatial_upsample
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        inputs = reverse_space_to_depth(
-            inputs, self.temporal_upsample, self.spatial_upsample
-        )
+        inputs = reverse_space_to_depth(inputs, self.temporal_upsample, self.spatial_upsample)
         return inputs

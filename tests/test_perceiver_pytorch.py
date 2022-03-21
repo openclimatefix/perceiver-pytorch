@@ -1,5 +1,6 @@
-from perceiver_pytorch.perceiver_pytorch import Perceiver
 import torch
+
+from perceiver_pytorch.perceiver_pytorch import Perceiver
 
 
 def test_init_model():

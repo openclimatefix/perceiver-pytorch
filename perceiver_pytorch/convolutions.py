@@ -21,9 +21,7 @@ class Conv2DDownsample(torch.nn.Sequential):
 
         layers = [self.make_layer(input_channels, output_channels, batch=use_batchnorm)]
         for _ in range(num_layers - 1):
-            layers += [
-                self.make_layer(output_channels, output_channels, batch=use_batchnorm)
-            ]
+            layers += [self.make_layer(output_channels, output_channels, batch=use_batchnorm)]
 
         super().__init__(*layers)
 
@@ -94,8 +92,7 @@ class Conv3DUpsample(torch.nn.Module):
         # The decoder sets the number of upsamples as log2(upsample_value), and this changes the number of channels
         # in a similar way, so it all scales together.
         intermediate_output_channels = [
-            output_channels * pow(2, num_upsamples - 1 - i)
-            for i in range(0, num_upsamples)
+            output_channels * pow(2, num_upsamples - 1 - i) for i in range(0, num_upsamples)
         ]
         intermediate_input_channels = [input_channels] + intermediate_output_channels
 

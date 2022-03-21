@@ -1,9 +1,10 @@
+import einops
 import pytest
 import torch
-from perceiver_pytorch.queries import LearnableQuery
+
 from perceiver_pytorch.perceiver_io import PerceiverIO
+from perceiver_pytorch.queries import LearnableQuery
 from perceiver_pytorch.utils import encode_position
-import einops
 
 
 @pytest.mark.parametrize("layer_shape", ["2d", "3d"])

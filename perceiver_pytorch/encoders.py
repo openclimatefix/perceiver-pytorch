@@ -1,9 +1,10 @@
-import torch
-from torch import nn
-import torchvision
-import torch.nn.functional as F
-import numpy as np
 import math
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torchvision
+from torch import nn
 
 from perceiver_pytorch.convolutions import Conv2DDownsample
 from perceiver_pytorch.utils import space_to_depth
@@ -66,9 +67,7 @@ class ImageEncoder(torch.nn.Module):
                 spatial_downsample=spatial_downsample,
             )
         elif self.prep_type == "metnet":
-            self.encoder = ImageEncoderMetNet(
-                crop_size=crop_size, use_space2depth=use_space2depth
-            )
+            self.encoder = ImageEncoderMetNet(crop_size=crop_size, use_space2depth=use_space2depth)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.encoder(x)
@@ -169,7 +168,9 @@ class ImageEncoderConv1x1(torch.nn.Module):
 
 class ImageEncoderPatches(torch.nn.Module):
     def __init__(
-        self, spatial_downsample: int = 4, temporal_downsample: int = 1,
+        self,
+        spatial_downsample: int = 4,
+        temporal_downsample: int = 1,
     ):
         """
         Image encoder that uses patches
@@ -198,7 +199,9 @@ class ImageEncoderPatches(torch.nn.Module):
 
 class ImageEncoderPixel(torch.nn.Module):
     def __init__(
-        self, spatial_downsample: int = 4, temporal_downsample: int = 1,
+        self,
+        spatial_downsample: int = 4,
+        temporal_downsample: int = 1,
     ):
         """
         Image encoder class for simple downsampling with pixels
@@ -231,7 +234,9 @@ class ImageEncoderPixel(torch.nn.Module):
 
 class ImageEncoderMetNet(nn.Module):
     def __init__(
-        self, crop_size: int = 256, use_space2depth: bool = True,
+        self,
+        crop_size: int = 256,
+        use_space2depth: bool = True,
     ):
         """
         Performs the MetNet preprocessing of mean pooling Sat channels, followed by

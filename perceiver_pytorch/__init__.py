@@ -1,3 +1,3 @@
-from perceiver_pytorch.perceiver_pytorch import Perceiver
-from perceiver_pytorch.perceiver_io import PerceiverIO
 from perceiver_pytorch.multi_perceiver_pytorch import MultiPerceiver
+from perceiver_pytorch.perceiver_io import PerceiverIO
+from perceiver_pytorch.perceiver_pytorch import Perceiver

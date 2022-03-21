@@ -1,10 +1,12 @@
+import logging
+from math import prod
+from typing import List, Optional, Tuple, Union
+
+import einops
 import torch
 from torch.distributions import uniform
-from typing import List, Union, Tuple, Optional
+
 from perceiver_pytorch.utils import encode_position
-from math import prod
-import einops
-import logging
 
 _LOG = logging.getLogger("perceiver.queries")
 _LOG.setLevel(logging.WARN)

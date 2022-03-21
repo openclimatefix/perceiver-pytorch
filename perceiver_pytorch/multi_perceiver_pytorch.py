@@ -1,10 +1,12 @@
-from perceiver_pytorch.perceiver_io import PerceiverIO
-from perceiver_pytorch.modalities import InputModality, modality_encoding
-from perceiver_pytorch.utils import encode_position, fourier_encode
-import torch
-from typing import List, Iterable, Dict, Optional, Any, Union, Tuple
-from einops import rearrange, repeat
 from math import prod
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
+import torch
+from einops import rearrange, repeat
+
+from perceiver_pytorch.modalities import InputModality, modality_encoding
+from perceiver_pytorch.perceiver_io import PerceiverIO
+from perceiver_pytorch.utils import encode_position, fourier_encode
 
 
 class MultiPerceiver(torch.nn.Module):
