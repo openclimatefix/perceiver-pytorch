@@ -4,6 +4,6 @@ on: [push]
 
 jobs:
   call-run-python-linters:
-    uses: openclimatefix/.github/.github/workflows/python-lint.yml@main
+    uses: openclimatefix/.github/.github/workflows/python-lint.yml@e67a64b086a5662c39f6b4523a97dd0641904279
     with:
       folder: "perceiver_pytorch"
