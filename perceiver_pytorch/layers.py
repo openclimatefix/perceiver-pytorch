@@ -2,7 +2,7 @@ from functools import wraps
 
 import torch
 from einops import rearrange, repeat
-from torch import nn, einsum
+from torch import einsum, nn
 from torch.nn import functional as F
 
 from perceiver_pytorch.rotary import apply_rotary_emb
@@ -37,9 +37,7 @@ class PreNorm(nn.Module):
         super().__init__()
         self.fn = fn
         self.norm = nn.LayerNorm(dim)
-        self.norm_context = (
-            nn.LayerNorm(context_dim) if exists(context_dim) else None
-        )
+        self.norm_context = nn.LayerNorm(context_dim) if exists(context_dim) else None
 
     def forward(self, x, **kwargs):
         x = self.norm(x)
@@ -57,6 +55,7 @@ class GEGLU(nn.Module):
     Gaussian Error Gated Linear Unit.
     See Shazer 2020: https://arxiv.org/abs/2002.05202
     """
+
     def forward(self, x):
         x, gates = x.chunk(2, dim=-1)
         return x * F.gelu(gates)
@@ -85,9 +84,7 @@ class FeedForward(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(
-        self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0
-    ):
+    def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.0):
         """
         Args:
             query_dim: Size of the queries.
@@ -102,15 +99,13 @@ class Attention(nn.Module):
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
 
-        self.scale = dim_head ** -0.5
+        self.scale = dim_head**-0.5
         self.heads = heads
 
         self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
         self.to_kv = nn.Linear(context_dim, inner_dim * 2, bias=False)
 
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, query_dim), nn.Dropout(dropout)
-        )
+        self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))
 
     def forward(self, x, context=None, mask=None, pos_emb=None):
         """
@@ -134,9 +129,7 @@ class Attention(nn.Module):
         # Rearrange the query, key and value tensors.
         # b = batch size; n = TODO (PD-2021-09-13)
         # h = number of heads; d = number of dims per head.
-        q, k, v = map(
-            lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
-        )
+        q, k, v = map(lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v))
 
         if exists(pos_emb):
             q, k = apply_rotary_emb(q, k, pos_emb)

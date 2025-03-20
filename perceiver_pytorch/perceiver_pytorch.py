@@ -2,7 +2,7 @@ import torch
 from einops import rearrange, repeat
 from torch import nn
 
-from perceiver_pytorch.layers import exists, cache_fn, PreNorm, FeedForward, Attention
+from perceiver_pytorch.layers import Attention, FeedForward, PreNorm, cache_fn, exists
 from perceiver_pytorch.rotary import SinusoidalEmbeddings
 from perceiver_pytorch.utils import encode_position
 

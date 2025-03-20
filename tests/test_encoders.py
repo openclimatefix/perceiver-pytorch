@@ -1,6 +1,7 @@
-from perceiver_pytorch.encoders import ImageEncoder
-import torch
 import pytest
+import torch
+
+from perceiver_pytorch.encoders import ImageEncoder
 
 
 @pytest.mark.parametrize("prep_type", ["conv", "conv1x1"])
@@ -60,9 +61,7 @@ def test_pixels_video_encoder():
 
 
 def test_pixels_video_downsample_encoder():
-    encoder = ImageEncoder(
-        prep_type="pixels", output_channels=48, temporal_downsample=2
-    )
+    encoder = ImageEncoder(prep_type="pixels", output_channels=48, temporal_downsample=2)
     image = torch.randn(2, 6, 12, 256, 256)
     with torch.no_grad():
         out = encoder(image)
